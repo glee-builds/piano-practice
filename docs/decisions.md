@@ -17,3 +17,4 @@ Every project decision, when it was made, and why. When a decision changes, don'
 | 2026-11-13 | Rewards | Stars per item, a gift box after each finished practice, a golden gift at the weekly goal, a sticker album (space, animals, sports, places), no repeat stickers | Owner's choice. A "mystery song" reward was considered and dropped |
 | 2026-11-13 | Pacing | A week streak counts weeks that met the goal, with parent-set holiday weeks. Extra days are never prompted | Keeps to the shared "kind pacing" rule while fitting a 3-days-a-week habit |
 | 2026-11-13 | Honesty | Checkmarks are self-reported. No timers, no microphone | Trust and simplicity |
+| 2026-11-13 | Features | Removed the "Read it to me" button | The owner decided it isn't needed: the player reads the list without help |
