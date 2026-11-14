@@ -37,6 +37,7 @@ function update(changes) {
 }
 
 function go(name) {
+  if ("speechSynthesis" in window) speechSynthesis.cancel(); // stop reading when leaving a screen
   if (name === "list") draftPhotoId = state.week ? state.week.photoId || null : null;
   screen = name;
   render();
@@ -245,6 +246,30 @@ function weekGrid(week, activeDate) {
   return el("div", { class: "grid-wrap" }, table);
 }
 
+// ---------- Read it to me ----------
+
+// Reads the list out loud using the device's own voice. This works
+// offline and sends nothing anywhere. Tapping again stops it.
+function readAloudButton(texts) {
+  if (!("speechSynthesis" in window)) return null;
+  const btn = button(speechSynthesis.speaking ? "Stop reading" : "Read it to me", () => {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+      btn.textContent = "Read it to me";
+      return;
+    }
+    texts.forEach((text, index) => {
+      const speech = new SpeechSynthesisUtterance(text);
+      speech.rate = 0.9;
+      if (index === 0) speech.onstart = () => { btn.textContent = "Stop reading"; };
+      if (index === texts.length - 1) speech.onend = () => { btn.textContent = "Read it to me"; };
+      speech.onerror = () => { btn.textContent = "Read it to me"; };
+      speechSynthesis.speak(speech);
+    });
+  });
+  return btn;
+}
+
 // ---------- Practice ----------
 
 function practiceScreen() {
@@ -260,6 +285,7 @@ function practiceScreen() {
       el("div", { class: "row" },
         button("Back", () => go("home")),
         week.photoId && button("See your teacher's note", () => showNote(week.photoId, "practice")),
+        readAloudButton(week.items.map((item) => item.text)),
         button("Finish practice", () => {
           update(awardFinish(state.week, day.date, state.stars, goal()));
           go("finished");
