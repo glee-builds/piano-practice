@@ -13,6 +13,7 @@ import {
   finishedDayCount,
 } from "./week.js";
 import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
+import { shortDate, summarize, weekStreak } from "./history.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
 import { load, save } from "./storage.js";
 
@@ -55,6 +56,7 @@ function icon(name) {
     check: "M5 13l5 5L20 7",
     star: "M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.9 6.6 19.8l1.1-6.1L3.2 9.4l6.1-.8z",
     plus: "M12 5v14M5 12h14",
+    flame: "M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z",
   };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -108,6 +110,7 @@ function homeScreen() {
     ),
     el("section", { class: "card" },
       el("p", { class: "label" }, "Practice days"),
+      streakPill(),
       dayDots(done),
       el("p", {}, goalMessage(done)),
       action
@@ -117,7 +120,8 @@ function homeScreen() {
       weekGrid(week, null),
       el("div", { class: "row" },
         button("Change the list", () => go("list")),
-        button("Start a new week", () => go("new-week"))
+        button("Start a new week", () => go("new-week")),
+        state.history.length > 0 && button("Past weeks", () => go("past"))
       )
     ),
   ];
@@ -132,6 +136,15 @@ function topBar(title) {
       button("Sticker album", () => go("album"))
     )
   );
+}
+
+// Shows how many weeks in a row reached the goal. Hidden when there is
+// no streak, so a missed week is never pointed out.
+function streakPill() {
+  const streak = weekStreak(state.history, state.week, DEFAULT_GOAL);
+  if (streak === 0) return null;
+  return el("p", { class: "streak" }, icon("flame"),
+    streak === 1 ? " 1 week streak" : ` ${streak} week streak`);
 }
 
 function goalMessage(done) {
@@ -441,12 +454,34 @@ function newWeekScreen() {
         button("Start a new week", () => {
           update({
             lastItems: state.week.items.map((item) => item.text),
+            history: [...state.history, summarize(state.week, DEFAULT_GOAL)],
             week: null,
           });
           go("list");
         }, "main")
       )
     ),
+  ];
+}
+
+// ---------- Past weeks ----------
+
+function pastScreen() {
+  const weeks = [...state.history].reverse();
+  return [
+    el("div", { class: "top" },
+      el("h1", {}, "Past weeks"),
+      button("Back", () => go("home"))),
+    weeks.map((past) =>
+      el("section", { class: "card" },
+        el("h2", {}, `Week of ${shortDate(past.startedOn)}`),
+        el("p", { class: past.met ? "done-note" : "" },
+          past.met && icon("star"),
+          ` ${past.days} practice ${past.days === 1 ? "day" : "days"}`,
+          past.met ? ". Goal reached." : ".",
+          past.holiday ? " Holiday week." : ""),
+        el("ul", { class: "past-items" }, past.items.map((text) => el("li", {}, text)))
+      )),
   ];
 }
 
@@ -460,6 +495,7 @@ const SCREENS = {
   "new-week": newWeekScreen,
   gift: giftScreen,
   album: albumScreen,
+  past: pastScreen,
 };
 
 function render() {
