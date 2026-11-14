@@ -1,0 +1,32 @@
+:root {
+  --page: #f6f3ee;
+  --card: #ffffff;
+  --ink: #26233a;
+  --ink-soft: #5d5a72;
+  --line: #d9d4c9;
+  --main: #4f46a8;
+  --main-ink: #ffffff;
+  --main-soft: #e9e7fb;
+  --star: #f2b33d;
+  --star-soft: #fcefd2;
+  --star-ink: #6b4a05;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+#app {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+h1 { font-size: 28px; margin: 0 0 8px; }
