@@ -176,10 +176,14 @@ textarea, .text-input {
 .gift-art .lid { transform-box: fill-box; transform-origin: 20% 100%; transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
 .gift-button.opening .gift-art { animation: none; }
 .gift-button.opening .lid { transform: translateY(-13px) rotate(-22deg); }
-.sticker { width: 88px; height: 88px; border-radius: 50%; background: #ffffff; border: 3px solid var(--line); display: flex; align-items: center; justify-content: center; margin: 0 auto; }
-.sticker svg { width: 64%; height: 64%; }
-.sticker-shiny { border-color: var(--star); background: var(--star-soft); box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--star); }
-.sticker-missing { border-style: dashed; color: var(--ink-soft); font-size: 30px; font-weight: 800; background: none; }
+/* A sticker is drawn with a shared outline, white border, shadow, and
+   gloss (the "sticker-look" filter in app.js). A shiny one sits on a soft
+   gold glow with sparkles. */
+.sticker { width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+.sticker svg { width: 100%; height: 100%; overflow: visible; }
+.sticker .shine { fill: url(#shine-glow); }
+.sparkle { fill: var(--star); stroke: #ffffff; stroke-width: 1; stroke-linejoin: round; }
+.sticker-missing span { width: 70%; height: 70%; border-radius: 50%; border: 3px dashed #c9c5e6; background: rgba(255, 255, 255, 0.5); color: #a9a4cf; font-size: 28px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
 .reveal-card { position: relative; overflow: hidden; }
 .reveal { margin: 12px 0 20px; }
 .reveal .sticker { width: 190px; height: 190px; animation: pop 0.55s ease-out; }
@@ -188,7 +192,7 @@ textarea, .text-input {
 /* The small puff of confetti when a box is checked. */
 .burst { position: fixed; width: 0; height: 0; pointer-events: none; z-index: 5; }
 .spark { position: absolute; left: -4px; top: -6px; width: 8px; height: 12px; border-radius: 2px; animation: fly 0.7s ease-out forwards; }
-.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 18px 10px; padding-top: 8px; }
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 16px 8px; padding: 16px 10px; margin-top: 10px; border-radius: 18px; background: #efedfb; background-image: radial-gradient(#dcd8f5 1.500px, transparent 1.600px); background-size: 18px 18px; }
 .slot { text-align: center; }
 .slot-name { display: block; font-size: 14px; margin-top: 8px; min-height: 21px; }
 

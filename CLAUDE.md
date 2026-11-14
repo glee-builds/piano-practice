@@ -24,7 +24,7 @@ Kids' app rules in `../CLAUDE.md` apply, with these changes for this project:
 - **iPad first.** Designed for an iPad in either orientation; must still work on a phone. Tap targets at least 48px.
 - **System keyboard on one screen only.** The "This week's list" box uses the system keyboard so the player can dictate, type, or paste. Everything else is tap only.
 - **Kind pacing.** No timers, no points shop. Every finished practice gets a gift. Extra practice days are never prompted. A missed week is shown without scolding.
-- **Stickers are original SVG drawings** made from simple shapes. No commercial characters, team logos, or brand colors.
+- **Stickers are original SVG drawings** made from simple shapes. No commercial characters, team logos, or brand colors. Every sticker gets the same finish when it is shown (an even outline, a white cut-out border, a shadow, and a gloss), from the `sticker-look` filter in `src/app.js`, so a new drawing only needs flat shapes and colors.
 - **No external network requests.** No CDNs, web fonts, or third-party scripts.
 - **Look:** a night sky. Practice days are gold stars on a music staff. Colors and the font are set once at the top of `styles.css`; use those variables instead of new colors.
 - **Motion:** only in answer to a tap (check pop, gift lid, confetti), and always switched off under `prefers-reduced-motion`.

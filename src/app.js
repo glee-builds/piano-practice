@@ -378,21 +378,35 @@ function finishedScreen() {
 
 const GIFT_NAMES = { small: "A gift", big: "A big gift", golden: "A golden gift" };
 
+// A gift box drawn with soft shading: light from the top left, a shadow on
+// the ground, and a ribbon with a bow. The lid is its own group so it can
+// lift off when the gift is opened.
 function giftBox(kind) {
-  const colors = {
-    small: ["#7a6ad8", "#4f46a8", "#f2b33d"],
-    big: ["#58b7d6", "#2f7f9c", "#d9534f"],
-    golden: ["#f7c948", "#b97f12", "#ffffff"],
+  const [light, dark, edge, ribbonLight, ribbonDark] = {
+    small: ["#9a8cf5", "#5a4cc4", "#372d8c", "#ffdb70", "#f0a52a"],
+    big: ["#6fdaec", "#2a94b8", "#1c6a86", "#ff9b8a", "#e2504c"],
+    golden: ["#ffe58a", "#f2a51e", "#a8700c", "#ffffff", "#e4dcff"],
   }[kind];
   const box = el("div", { class: `gift-art gift-${kind}` });
-  box.innerHTML = `<svg viewBox="0 -14 48 62" aria-hidden="true">
-    <rect x="6" y="20" width="36" height="24" rx="3" fill="${colors[0]}" stroke="${colors[1]}" stroke-width="2"/>
-    <rect x="21" y="20" width="6" height="24" fill="${colors[2]}"/>
+  box.innerHTML = `<svg viewBox="0 -16 48 66" aria-hidden="true">
+    <defs>
+      <linearGradient id="gift-side-${kind}" x1="0" y1="0" x2="0.300" y2="1"><stop offset="0" stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
+      <linearGradient id="gift-ribbon-${kind}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ribbonLight}"/><stop offset="1" stop-color="${ribbonDark}"/></linearGradient>
+    </defs>
+    <ellipse cx="24" cy="45.500" rx="19" ry="3" fill="rgba(29,26,58,0.18)"/>
+    <rect x="7" y="19" width="34" height="25" rx="4" fill="url(#gift-side-${kind})" stroke="${edge}" stroke-width="1.500"/>
+    <rect x="7.750" y="20" width="32.500" height="5.500" fill="rgba(20,16,60,0.16)"/>
+    <rect x="20.500" y="19.750" width="7" height="23.500" fill="url(#gift-ribbon-${kind})"/>
+    <rect x="10.500" y="27" width="3" height="13" rx="1.500" fill="rgba(255,255,255,0.38)"/>
     <g class="lid">
-      <rect x="3" y="12" width="42" height="10" rx="3" fill="${colors[0]}" stroke="${colors[1]}" stroke-width="2"/>
-      <rect x="21" y="12" width="6" height="10" fill="${colors[2]}"/>
-      <path d="M24 12c-4-9-13-7-10-2 2 3 6 2 10 2zM24 12c4-9 13-7 10-2-2 3-6 2-10 2z" fill="${colors[2]}" stroke="${colors[1]}" stroke-width="1.5"/>
+      <path d="M24 11.500c-3-9.500-13.500-8.500-11.500-2.500 1.500 4 7 3.200 11.500 2.500z" fill="url(#gift-ribbon-${kind})" stroke="${edge}" stroke-width="1.300" stroke-linejoin="round"/>
+      <path d="M24 11.500c3-9.500 13.500-8.500 11.500-2.500-1.500 4-7 3.200-11.500 2.500z" fill="url(#gift-ribbon-${kind})" stroke="${edge}" stroke-width="1.300" stroke-linejoin="round"/>
+      <rect x="4" y="11" width="40" height="10" rx="3.500" fill="url(#gift-side-${kind})" stroke="${edge}" stroke-width="1.500"/>
+      <rect x="20.500" y="11.750" width="7" height="8.500" fill="url(#gift-ribbon-${kind})"/>
+      <rect x="7" y="13" width="11" height="2.200" rx="1.100" fill="rgba(255,255,255,0.5)"/>
+      <circle cx="24" cy="11" r="3" fill="url(#gift-ribbon-${kind})" stroke="${edge}" stroke-width="1.300"/>
     </g>
+    ${kind === "golden" ? sparkle(5, 2, 4) + sparkle(44, -6, 3) + sparkle(46, 30, 2.500) : ""}
   </svg>`;
   return box;
 }
@@ -439,9 +453,42 @@ function burst(box) {
   setTimeout(() => puff.remove(), 800);
 }
 
+// One shared look for every sticker, so they all match however they were
+// drawn: an even dark outline, a white cut-out border like a real sticker,
+// a soft shadow underneath, and a glossy highlight from the top left.
+// It is an SVG filter, added to the page once and used by every sticker.
+const STICKER_LOOK = `<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <filter id="sticker-look" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="0.8" result="inkShape"/>
+    <feFlood flood-color="#2a2452"/><feComposite in2="inkShape" operator="in" result="ink"/>
+    <feMorphology in="SourceAlpha" operator="dilate" radius="3" result="wide"/>
+    <feGaussianBlur in="wide" stdDeviation="0.9"/>
+    <feComponentTransfer result="cutShape"><feFuncA type="linear" slope="8" intercept="-3.500"/></feComponentTransfer>
+    <feFlood flood-color="#ffffff"/><feComposite in2="cutShape" operator="in" result="cut"/>
+    <feGaussianBlur in="cutShape" stdDeviation="1.1"/><feOffset dy="1.600" result="low"/>
+    <feFlood flood-color="#1d1a3a" flood-opacity="0.32"/><feComposite in2="low" operator="in" result="shadow"/>
+    <feGaussianBlur in="SourceAlpha" stdDeviation="1.500" result="soft"/>
+    <feSpecularLighting in="soft" surfaceScale="3.500" specularConstant="0.650" specularExponent="16" lighting-color="#ffffff" result="light">
+      <feDistantLight azimuth="235" elevation="52"/>
+    </feSpecularLighting>
+    <feComposite in="light" in2="SourceAlpha" operator="in" result="gloss"/>
+    <feMerge><feMergeNode in="shadow"/><feMergeNode in="cut"/><feMergeNode in="ink"/><feMergeNode in="SourceGraphic"/><feMergeNode in="gloss"/></feMerge>
+  </filter>
+  <radialGradient id="shine-glow"><stop offset="0.350" stop-color="#ffd257" stop-opacity="0.750"/><stop offset="1" stop-color="#ffd257" stop-opacity="0"/></radialGradient>
+</svg>`;
+document.body.insertAdjacentHTML("beforeend", STICKER_LOOK);
+
+// A four-point sparkle, used on shiny stickers.
+const sparkle = (x, y, r) =>
+  `<path class="sparkle" d="M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}z"/>`;
+
 function stickerArt(sticker, shiny) {
   const art = el("div", { class: `sticker ${shiny ? "sticker-shiny" : ""}` });
-  art.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true">${sticker.art}</svg>`;
+  art.innerHTML = `<svg viewBox="-6 -6 60 60" aria-hidden="true">`
+    + (shiny ? `<circle class="shine" cx="24" cy="24" r="27"/>` : "")
+    + `<g filter="url(#sticker-look)">${sticker.art}</g>`
+    + (shiny ? sparkle(45, 3, 6) + sparkle(3, 40, 4.5) + sparkle(49, 36, 3) : "")
+    + `</svg>`;
   return art;
 }
 
@@ -514,7 +561,7 @@ function albumScreen() {
             ? el("div", { class: "slot" }, stickerArt(sticker, mine.shiny),
                 el("span", { class: "slot-name" }, sticker.name))
             : el("div", { class: "slot slot-empty", role: "img", "aria-label": "Sticker not found yet" },
-                el("div", { class: "sticker sticker-missing" }, "?"),
+                el("div", { class: "sticker sticker-missing" }, el("span", {}, "?")),
                 el("span", { class: "slot-name" }, " "));
         }))
       );
