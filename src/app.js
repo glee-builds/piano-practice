@@ -188,35 +188,64 @@ function starPath(cx, cy, outer) {
   return d + "Z";
 }
 
+// Shared paint for the sky pictures: gold for stars, glows, and the moon.
+const SKY_DEFS = `<defs>
+  <radialGradient id="gold" cx="0.380" cy="0.300" r="0.800"><stop offset="0" stop-color="#fff4b8"/><stop offset="0.450" stop-color="#ffd24d"/><stop offset="1" stop-color="#f5a31c"/></radialGradient>
+  <radialGradient id="glow"><stop offset="0" stop-color="#ffd257" stop-opacity="0.550"/><stop offset="1" stop-color="#ffd257" stop-opacity="0"/></radialGradient>
+  <radialGradient id="moonlight"><stop offset="0" stop-color="#cfc8ff" stop-opacity="0.350"/><stop offset="1" stop-color="#cfc8ff" stop-opacity="0"/></radialGradient>
+  <linearGradient id="staffline" gradientUnits="userSpaceOnUse" x1="16" x2="584" y1="0" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity="0"/><stop offset="0.150" stop-color="#ffffff" stop-opacity="0.300"/><stop offset="0.850" stop-color="#ffffff" stop-opacity="0.300"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+</defs>`;
+
+// A friendly star: rounded points, a glow, shading, and a small face.
+// `awake` stars are gold and smiling; the others are outlines, asleep.
+function starArt(x, y, r, awake) {
+  const shape = starPath(x, y, r);
+  const eye = r * 0.270;
+  if (!awake) {
+    return `<path d="${shape}" class="star-todo"/>`
+      + `<path d="M${x - eye - 3} ${y + 1}q3 3 6 0M${x + eye - 3} ${y + 1}q3 3 6 0" class="star-sleep"/>`;
+  }
+  return `<circle cx="${x}" cy="${y}" r="${r * 2.100}" fill="url(#glow)"/>`
+    + `<path d="${shape}" class="star-edge" stroke-width="${r * 0.420}"/>`
+    + `<path d="${shape}" class="star-body" stroke-width="${r * 0.250}"/>`
+    + `<ellipse cx="${x - r * 0.300}" cy="${y - r * 0.420}" rx="${r * 0.200}" ry="${r * 0.100}" class="star-glint" transform="rotate(-30 ${x - r * 0.300} ${y - r * 0.420})"/>`
+    + `<circle cx="${x - eye}" cy="${y}" r="${r * 0.095}" class="star-eye"/><circle cx="${x + eye}" cy="${y}" r="${r * 0.095}" class="star-eye"/>`
+    + `<path d="M${x - r * 0.190} ${y + r * 0.230}q${r * 0.190} ${r * 0.200} ${r * 0.380} 0" class="star-smile" stroke-width="${r * 0.085}"/>`
+    + `<circle cx="${x - r * 0.500}" cy="${y + r * 0.200}" r="${r * 0.110}" class="star-cheek"/><circle cx="${x + r * 0.500}" cy="${y + r * 0.200}" r="${r * 0.110}" class="star-cheek"/>`;
+}
+
 // This week as a night sky. Each practice day is a star sitting on a music
-// staff like a note: gold once it's done, an outline while it's still to come.
+// staff like a note: gold and smiling once it's done, an outline asleep
+// while it's still to come.
 function skyHero(done, action) {
   const slots = Math.max(goal(), done);
-  const heights = [118, 96, 74, 96, 118, 74, 52]; // which staff line each star sits on
+  const heights = [126, 104, 82, 104, 126, 82, 60]; // which staff line each star sits on
   const width = 600;
-  const gap = slots > 1 ? Math.min(110, 440 / (slots - 1)) : 0;
+  const gap = slots > 1 ? Math.min(110, 420 / (slots - 1)) : 0;
   const first = width / 2 - (gap * (slots - 1)) / 2;
-  let art = "";
-  for (const y of [52, 74, 96, 118, 140]) {
-    art += `<line x1="24" x2="${width - 24}" y1="${y}" y2="${y}" class="staff"/>`;
+  let art = SKY_DEFS;
+  // Far-off stars, a few sparkles, and a crescent moon with a soft glow.
+  for (const [x, y, r, o] of [[40, 30, 1.6, 0.7], [96, 64, 1, 0.45], [150, 18, 1.3, 0.6], [214, 44, 0.9, 0.4], [268, 22, 1.7, 0.7], [330, 50, 1, 0.45], [372, 14, 1.3, 0.6], [430, 40, 0.9, 0.4], [86, 176, 1.3, 0.5], [190, 186, 0.9, 0.4], [330, 180, 1.6, 0.6], [452, 188, 1, 0.45], [560, 172, 1.3, 0.55], [20, 120, 1, 0.4], [582, 110, 1, 0.4]]) {
+    art += `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffffff" opacity="${o}"/>`;
   }
-  for (const [x, y, r] of [[52, 26, 2], [150, 18, 1.5], [268, 30, 2], [372, 16, 1.5], [470, 28, 2], [556, 20, 1.5], [96, 166, 1.5], [330, 170, 2], [520, 164, 1.5]]) {
-    art += `<circle cx="${x}" cy="${y}" r="${r}" class="speck"/>`;
+  art += `<g class="sky-sparkle">${sparkle(120, 34, 6)}${sparkle(470, 18, 4.500)}${sparkle(40, 160, 4)}</g>`;
+  art += `<circle cx="536" cy="42" r="46" fill="url(#moonlight)"/>`
+    + `<path d="M546 18a26 26 0 1 0 16 38a21 21 0 0 1-16-38z" class="moon"/>`;
+  for (const y of [60, 82, 104, 126, 148]) {
+    art += `<line x1="16" x2="${width - 16}" y1="${y}" y2="${y}" class="staff"/>`;
   }
   for (let i = 0; i < slots; i++) {
     const x = first + gap * i;
     const y = heights[i % heights.length];
     if (i < done) {
-      art += `<circle cx="${x}" cy="${y}" r="38" class="halo"/>`
-        + `<line x1="${x + 21}" x2="${x + 21}" y1="${y - 4}" y2="${y - 62}" class="stem"/>`
-        + `<path d="${starPath(x, y, 26)}" class="star-done"/>`;
+      art += `<line x1="${x + 24}" x2="${x + 24}" y1="${y - 6}" y2="${y - 66}" class="stem"/>` + starArt(x, y, 27, true);
     } else {
-      art += `<path d="${starPath(x, y, 22)}" class="star-todo"/>`;
+      art += starArt(x, y, 23, false);
     }
   }
   const sky = el("div", { class: "sky-art", role: "img",
     "aria-label": `${done} of ${goal()} practice days done this week` });
-  sky.innerHTML = `<svg viewBox="0 0 ${width} 190" aria-hidden="true">${art}</svg>`;
+  sky.innerHTML = `<svg viewBox="0 0 ${width} 200" aria-hidden="true">${art}</svg>`;
 
   return el("section", { class: "sky" },
     sky,
