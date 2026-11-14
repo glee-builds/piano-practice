@@ -78,6 +78,9 @@ function icon(name) {
     flame: "M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z",
     moon: "M16 4a9 9 0 1 0 5 13A7.500 7.500 0 0 1 16 4z",
     home: "M4 11l8-7 8 7M6 9.500V20h4v-6h4v6h4V9.500",
+    history: "M5 6h14v14H5zM5 10.500h14M9 3.500V7M15 3.500V7M9 14.500l2 2 4-4",
+    album: "M5 5h14v9l-5 5H5zM14 19v-5h5",
+    scene: "M4 6h16v12H4zM4 16l5-5 4 4 3-3 4 4",
   };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -105,6 +108,7 @@ function homeScreen() {
         el("p", {}, "Add the list from your teacher's note, then check things off each day you practice."),
         button("Add this week's list", () => go("list"), "main")
       ),
+      tiles(),
       state.history.length > 0 && weeksCard(),
       prizeCard(),
       holdButton(),
@@ -125,21 +129,27 @@ function homeScreen() {
     );
   }
 
+  // The sky holds the one main thing to do next. A waiting gift comes first.
   const waiting = unopenedGifts(week).length;
+  if (waiting > 0) {
+    action = el("div", { class: "sky-done" },
+      el("p", {}, waiting === 1 ? "You have a gift to open." : `You have ${waiting} gifts to open.`),
+      button(waiting === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "gold"),
+      !todayDay && button("Start today's practice", startToday, "ghost"),
+      todayDay && !todayDay.finished && button("Keep practicing", () => go("practice"), "ghost")
+    );
+  }
   return [
     topBar("This week's practice"),
-    waiting > 0 && el("section", { class: "card gift-card" },
-      el("p", {}, waiting === 1 ? "You have a gift to open." : `You have ${waiting} gifts to open.`),
-      button(waiting === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "main")
-    ),
     skyHero(done, action),
+    tiles(),
     weeksCard(),
     el("section", { class: "card" },
       el("h2", {}, "Your list"),
       weekGrid(week, null),
-      el("div", { class: "row" },
-        button("Change the list", () => go("list")),
-        button("Start a new week", () => go("new-week"))
+      el("div", { class: "quiet-row" },
+        button("Change the list", () => go("list"), "quiet"),
+        button("Start a new week", () => go("new-week"), "quiet")
       )
     ),
     prizeCard(),
@@ -153,16 +163,24 @@ function homeBar() {
     el("button", { class: "btn home-btn", type: "button", onClick: () => go("home") }, icon("home"), " Home"));
 }
 
-// The page title with the star total and the ways into history and the album.
+// The page title with the star total.
 function topBar(title) {
   return el("div", { class: "top" },
     el("h1", {}, title),
-    el("div", { class: "top-right" },
-      el("span", { class: "star-count", "aria-label": `${state.stars} stars` }, icon("star"), ` ${state.stars}`),
-      button("History", () => go("history")),
-      button("Stickers", () => go("album"))
-    )
+    el("span", { class: "star-count", "aria-label": `${state.stars} stars` }, icon("star"), ` ${state.stars}`)
   );
+}
+
+// The ways into the other pages: a row of big tiles, each with a picture.
+function tiles() {
+  const have = ALL_STICKERS.filter((sticker) => state.owned[sticker.id]).length;
+  const tile = (name, label, note, screenName) =>
+    el("button", { class: `tile tile-${name}`, type: "button", onClick: () => go(screenName) },
+      el("span", { class: "tile-icon" }, icon(name)),
+      el("span", { class: "tile-text" }, el("strong", {}, label), el("span", {}, note)));
+  return el("nav", { class: "tiles", "aria-label": "Pages" },
+    tile("album", "Stickers", `${have} of ${ALL_STICKERS.length}`, "album"),
+    tile("history", "History", "Every practice", "history"));
 }
 
 function goalMessage(done) {
@@ -261,8 +279,6 @@ function weeksCard() {
   const weeks = recentWeeks(state.history, state.week, goal(), 8);
   const streak = weekStreak(state.history, state.week, goal());
   const sum = totals(state.history, state.week, goal());
-  const stickers = ALL_STICKERS.filter((sticker) => state.owned[sticker.id]).length;
-
   // The gold line runs from the first week of the streak to the last,
   // passing through any holiday weeks in between.
   const inStreak = weeks.map((week, index) => (week.inStreak ? index : -1)).filter((index) => index >= 0);
@@ -300,8 +316,7 @@ function weeksCard() {
     el("p", { class: `streak-line ${streak > 0 ? "streak-on" : ""}` }, streak > 0 && icon("flame"), ` ${streakLine}`),
     el("div", { class: "tally" },
       el("div", {}, el("strong", {}, String(sum.practiceDays)), sum.practiceDays === 1 ? " practice day" : " practice days"),
-      el("div", {}, el("strong", {}, String(sum.goalsReached)), sum.goalsReached === 1 ? " goal reached" : " goals reached"),
-      el("div", {}, el("strong", {}, `${stickers}`), ` of ${ALL_STICKERS.length} stickers`))
+      el("div", {}, el("strong", {}, String(sum.goalsReached)), sum.goalsReached === 1 ? " goal reached" : " goals reached"))
   );
 }
 
