@@ -30,3 +30,80 @@ body {
 }
 
 h1 { font-size: 28px; margin: 0 0 8px; }
+h2 { font-size: 21px; margin: 0 0 8px; }
+p { margin: 0 0 14px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.center { text-align: center; }
+.label { color: var(--ink-soft); font-size: 16px; margin-bottom: 8px; }
+.error { color: #a12626; font-weight: 600; min-height: 1px; }
+.error:empty { display: none; }
+
+/* Buttons: at least 48px tall so they are easy to tap. */
+.btn {
+  min-height: 52px;
+  padding: 10px 22px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+}
+.btn-main { background: var(--main); border-color: var(--main); color: var(--main-ink); }
+.btn:active { transform: scale(0.98); }
+.row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.row .btn { flex: 1 1 200px; }
+
+.icon { width: 1.3em; height: 1.3em; vertical-align: -0.25em; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.icon-star { fill: currentColor; stroke: none; }
+
+/* Practice day circles on the home screen. */
+.dots { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.dot {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px dashed var(--line); color: var(--ink-soft); font-weight: 600;
+}
+.dot-on { border: 2px solid var(--star); background: var(--star-soft); color: var(--star-ink); font-size: 24px; }
+.done-note { font-weight: 600; }
+.big-star { font-size: 72px; color: var(--star); line-height: 1; margin-bottom: 8px; }
+
+/* The checklist: one row per item, one column per practice day. */
+.grid-wrap { overflow-x: auto; }
+.grid { width: 100%; border-collapse: collapse; }
+.grid th { font-size: 15px; color: var(--ink-soft); font-weight: 600; padding: 4px 6px; width: 64px; }
+.grid th:first-child { width: auto; }
+.grid th.col-active { color: var(--main); }
+.grid td { padding: 8px 6px; border-top: 1px solid var(--line); text-align: center; }
+.grid td.item-text { text-align: left; padding-left: 0; }
+.box {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 2px solid var(--line); background: var(--card); color: var(--star-ink);
+  font-size: 18px; padding: 0;
+}
+.box-on { background: var(--star-soft); border-color: var(--star); }
+.box-tap { width: 52px; height: 52px; border-color: var(--main); font-size: 24px; }
+.box-tap.box-on { border-color: var(--star); }
+
+/* This week's list screen. */
+textarea {
+  width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--line);
+  font: inherit; color: var(--ink); background: var(--card); margin-bottom: 14px;
+}
+textarea:focus, .btn:focus-visible, .box-tap:focus-visible, .chip:focus-visible { outline: 3px solid var(--main); outline-offset: 2px; }
+.preview { margin: 0 0 14px; padding-left: 28px; }
+.preview:empty::before { content: "Nothing yet."; color: var(--ink-soft); margin-left: -28px; }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.chip {
+  min-height: 48px; padding: 8px 16px; border-radius: 24px;
+  border: 2px solid var(--main); background: var(--main-soft); color: var(--main);
+  font: inherit; font-weight: 600; text-align: left;
+}
