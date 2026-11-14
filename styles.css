@@ -89,20 +89,30 @@ p { margin: 0 0 14px; }
 
 /* The night sky: this week's practice days as star-notes on a music staff. */
 .sky {
-  background: var(--sky);
+  background:
+    radial-gradient(120% 70% at 50% 108%, rgba(124, 92, 230, 0.550), transparent 70%),
+    linear-gradient(180deg, var(--sky-deep) 0%, var(--sky) 48%, #35298a 100%);
   color: #ffffff;
   border-radius: 30px;
   padding: 18px 22px 26px;
   margin: 18px 0;
   text-align: center;
+  box-shadow: 0 10px 24px rgba(35, 29, 92, 0.280), inset 0 1px 0 rgba(255, 255, 255, 0.120);
+  overflow: hidden;
 }
-.sky-art svg { display: block; width: 100%; height: auto; max-height: 250px; }
-.sky .staff { stroke: rgba(255, 255, 255, 0.2); stroke-width: 2; }
-.sky .speck { fill: rgba(255, 255, 255, 0.55); }
-.sky .halo { fill: rgba(255, 201, 60, 0.16); }
-.sky .stem { stroke: var(--star); stroke-width: 4; stroke-linecap: round; }
-.sky .star-done { fill: var(--star); stroke: #fff3cf; stroke-width: 2; stroke-linejoin: round; }
-.sky .star-todo { fill: var(--sky-deep); stroke: rgba(255, 255, 255, 0.6); stroke-width: 2.5; stroke-dasharray: 5 5; stroke-linejoin: round; }
+.sky-art svg { display: block; width: 100%; height: auto; max-height: 260px; }
+.sky .staff { stroke: url(#staffline); stroke-width: 2; }
+.sky .moon { fill: #f3efff; }
+.sky-sparkle .sparkle { fill: #ffffff; stroke: none; opacity: 0.800; }
+.sky .stem { stroke: #ffd24d; stroke-width: 4.500; stroke-linecap: round; }
+.star-edge { fill: #b9770a; stroke: #b9770a; stroke-linejoin: round; }
+.star-body { fill: url(#gold); stroke: url(#gold); stroke-linejoin: round; }
+.star-glint { fill: rgba(255, 255, 255, 0.750); }
+.star-eye { fill: #4a2c00; }
+.star-smile { fill: none; stroke: #4a2c00; stroke-linecap: round; }
+.star-cheek { fill: rgba(255, 110, 80, 0.450); }
+.star-todo { fill: rgba(255, 255, 255, 0.100); stroke: rgba(255, 255, 255, 0.500); stroke-width: 5; stroke-linejoin: round; paint-order: stroke; }
+.star-sleep { fill: none; stroke: rgba(255, 255, 255, 0.600); stroke-width: 1.800; stroke-linecap: round; }
 .sky-message { font-size: 23px; font-weight: 800; margin: 6px 0 18px; }
 .sky-done p { font-weight: 700; color: var(--star); margin-bottom: 12px; }
 
