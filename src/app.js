@@ -13,7 +13,7 @@ import {
   finishedDayCount,
 } from "./week.js";
 import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
-import { shortDate, summarize, weekStreak, totals, recentWeeks } from "./history.js";
+import { shortDate, summarize, dayLog, weekStreak, totals, recentWeeks } from "./history.js";
 import { goldenCount, prizeProgress } from "./prize.js";
 import { makeBackup, readBackup } from "./backup.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
@@ -36,6 +36,13 @@ function update(changes) {
 }
 
 function go(name) {
+  if (name === "home") {
+    // Leaving for home tidies up anything half-shown on another screen.
+    justOpened = null;
+    prizeDraft = null;
+    backupNote = "";
+    restoreDraft = null;
+  }
   screen = name;
   render();
   window.scrollTo(0, 0);
@@ -64,6 +71,7 @@ function icon(name) {
     plus: "M12 5v14M5 12h14",
     flame: "M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z",
     moon: "M16 4a9 9 0 1 0 5 13A7.500 7.500 0 0 1 16 4z",
+    home: "M4 11l8-7 8 7M6 9.500V20h4v-6h4v6h4V9.500",
   };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -133,13 +141,20 @@ function homeScreen() {
   ];
 }
 
-// The page title with the star total and the way into the sticker album.
+// Shown at the top of every screen except home: one tap back to home.
+function homeBar() {
+  return el("nav", { class: "home-bar" },
+    el("button", { class: "btn home-btn", type: "button", onClick: () => go("home") }, icon("home"), " Home"));
+}
+
+// The page title with the star total and the ways into history and the album.
 function topBar(title) {
   return el("div", { class: "top" },
     el("h1", {}, title),
     el("div", { class: "top-right" },
       el("span", { class: "star-count", "aria-label": `${state.stars} stars` }, icon("star"), ` ${state.stars}`),
-      button("Sticker album", () => go("album"))
+      button("History", () => go("history")),
+      button("Stickers", () => go("album"))
     )
   );
 }
@@ -245,9 +260,7 @@ function weeksCard() {
   else streakLine = "Reach your goal this week to start a streak.";
 
   return el("section", { class: "card" },
-    el("div", { class: "top" },
-      el("h2", {}, "Your weeks"),
-      state.history.length > 0 && button("Past weeks", () => go("past"))),
+    el("h2", {}, "Your weeks"),
     el("div", { class: "weeks", role: "img", "aria-label": described }, columns),
     el("p", { class: `streak-line ${streak > 0 ? "streak-on" : ""}` }, streak > 0 && icon("flame"), ` ${streakLine}`),
     el("div", { class: "tally" },
@@ -325,7 +338,6 @@ function practiceScreen() {
       el("p", { class: "label" }, `${day.done.length} of ${total} checked`),
       weekGrid(week, day.date),
       el("div", { class: "row" },
-        button("Back", () => go("home")),
         button("Finish practice", () => {
           update(awardFinish(state.week, day.date, state.stars, goal()));
           go("finished");
@@ -457,8 +469,7 @@ function albumScreen() {
     el("div", { class: "top" },
       el("h1", {}, "Sticker album"),
       el("div", { class: "top-right" },
-        el("span", { class: "star-count", "aria-label": `${state.stars} stars` }, icon("star"), ` ${state.stars}`),
-        button("Back", () => go("home")))
+        el("span", { class: "star-count", "aria-label": `${state.stars} stars` }, icon("star"), ` ${state.stars}`))
     ),
     el("p", { class: "label" }, `${have} of ${total} stickers`),
     SETS.map((set) => {
@@ -660,7 +671,7 @@ function parentScreen() {
   return [
     el("div", { class: "top" },
       el("h1", {}, "Grown-ups"),
-      button("Done", () => { prizeDraft = null; backupNote = ""; restoreDraft = null; go("home"); }, "main")),
+      button("Done", () => go("home"), "main")),
 
     el("section", { class: "card" },
       el("h2", {}, "Weekly goal"),
@@ -788,22 +799,48 @@ function backupCard() {
   );
 }
 
-// ---------- Past weeks ----------
+// ---------- Practice history ----------
 
-function pastScreen() {
+// "2026-11-14" -> "Sat, Nov 14"
+const longDate = (date) => `${dayName(date)}, ${shortDate(date)}`;
+
+// One line for one finished practice: the day, what was checked, the stars.
+function logRow(entry) {
+  return el("li", { class: "log-row" },
+    el("span", { class: "log-date" }, entry.date === today() ? "Today" : longDate(entry.date)),
+    el("span", { class: "log-checked" }, `${entry.checked} of ${entry.of} checked`),
+    el("span", { class: "log-stars", "aria-label": `${entry.stars} ${entry.stars === 1 ? "star" : "stars"}` },
+      icon("star"), ` ${entry.stars}`));
+}
+
+function weekSummaryLine(days, met, holiday) {
+  return el("p", { class: met ? "done-note" : "" },
+    met && icon("star"),
+    ` ${days} practice ${days === 1 ? "day" : "days"}`,
+    met ? ". Goal reached." : ".",
+    holiday ? " Holiday week." : "");
+}
+
+function historyScreen() {
+  const week = state.week;
   const weeks = [...state.history].reverse();
+  const nowLog = week ? dayLog(week) : [];
   return [
-    el("div", { class: "top" },
-      el("h1", {}, "Past weeks"),
-      button("Back", () => go("home"))),
+    el("h1", {}, "Practice history"),
+    week && el("section", { class: "card" },
+      el("h2", {}, `This week (from ${shortDate(week.startedOn)})`),
+      weekSummaryLine(nowLog.length, nowLog.length >= goal(), Boolean(week.holiday)),
+      nowLog.length > 0
+        ? el("ul", { class: "log" }, nowLog.map(logRow))
+        : el("p", { class: "label" }, "Each practice you finish shows up here.")),
+    !week && weeks.length === 0 && el("section", { class: "card" },
+      el("p", {}, "No practices yet. Each practice you finish shows up here.")),
     weeks.map((past) =>
       el("section", { class: "card" },
         el("h2", {}, `Week of ${shortDate(past.startedOn)}`),
-        el("p", { class: past.met ? "done-note" : "" },
-          past.met && icon("star"),
-          ` ${past.days} practice ${past.days === 1 ? "day" : "days"}`,
-          past.met ? ". Goal reached." : ".",
-          past.holiday ? " Holiday week." : ""),
+        weekSummaryLine(past.days, past.met, past.holiday),
+        past.log && past.log.length > 0 && el("ul", { class: "log" }, past.log.map(logRow)),
+        el("p", { class: "label" }, "The list that week"),
         el("ul", { class: "past-items" }, past.items.map((text) => el("li", {}, text)))
       )),
   ];
@@ -819,7 +856,7 @@ const SCREENS = {
   "new-week": newWeekScreen,
   gift: giftScreen,
   album: albumScreen,
-  past: pastScreen,
+  history: historyScreen,
   parent: parentScreen,
 };
 
@@ -828,7 +865,10 @@ function render() {
   if (!state.week && needsWeek.includes(screen)) screen = "home";
   // A screen is a list of parts. Lists inside it are flattened, and parts
   // that are switched off (false or null) are skipped.
-  app.replaceChildren(...SCREENS[screen]().flat(Infinity).filter(Boolean));
+  const parts = SCREENS[screen]().flat(Infinity).filter(Boolean);
+  // Every screen except home starts with the Home button.
+  if (screen !== "home") parts.unshift(homeBar());
+  app.replaceChildren(...parts);
 }
 
 render();
