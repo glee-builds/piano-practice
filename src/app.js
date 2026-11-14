@@ -306,6 +306,7 @@ function weekGrid(week, activeDate) {
               justChecked = checked ? null : item.id;
               update({ week: toggleItem(state.week, day.date, item.id) });
               render();
+              if (justChecked) burst(app.querySelector(".box-pop"));
               justChecked = null;
             },
           }, checked ? icon("check") : null)
@@ -405,6 +406,30 @@ function confetti() {
     bits.push(bit);
   }
   return el("div", { class: "confetti", "aria-hidden": "true" }, bits);
+}
+
+// A small puff of paper bits flying out of a box that was just checked.
+// It sits on top of the page for under a second and then removes itself.
+function burst(box) {
+  if (!box || calmMotion()) return;
+  const colors = ["#ffc93c", "#ff7a6b", "#5b4fc4", "#3fc1c9", "#7ed492"];
+  const place = box.getBoundingClientRect();
+  const puff = el("div", { class: "burst", "aria-hidden": "true" });
+  puff.style.left = `${place.left + place.width / 2}px`;
+  puff.style.top = `${place.top + place.height / 2}px`;
+  const count = 12;
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2 + (i % 2 ? 0.25 : 0);
+    const far = 46 + (i % 3) * 16;
+    const bit = el("span", { class: "spark" });
+    bit.style.background = colors[i % colors.length];
+    bit.style.setProperty("--dx", `${(Math.cos(angle) * far).toFixed(0)}px`);
+    bit.style.setProperty("--dy", `${(Math.sin(angle) * far - 14).toFixed(0)}px`);
+    bit.style.setProperty("--turn", `${(i % 2 ? 1 : -1) * (160 + i * 20)}deg`);
+    puff.append(bit);
+  }
+  document.body.append(puff);
+  setTimeout(() => puff.remove(), 800);
 }
 
 function stickerArt(sticker, shiny) {
