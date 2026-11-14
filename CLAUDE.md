@@ -26,6 +26,8 @@ Kids' app rules in `../CLAUDE.md` apply, with these changes for this project:
 - **Kind pacing.** No timers, no points shop. Every finished practice gets a gift. Extra practice days are never prompted. A missed week is shown without scolding.
 - **Stickers are original SVG drawings** made from simple shapes. No commercial characters, team logos, or brand colors.
 - **No external network requests.** No CDNs, web fonts, or third-party scripts.
+- **Look:** a night sky. Practice days are gold stars on a music staff. Colors and the font are set once at the top of `styles.css`; use those variables instead of new colors.
+- **Motion:** only in answer to a tap (check pop, gift lid, confetti), and always switched off under `prefers-reduced-motion`.
 
 ## Repo layout
 

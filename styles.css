@@ -1,15 +1,22 @@
+/* Practice Stars: a night sky where practice days become stars.
+   Colors and fonts are set once here and reused everywhere below. */
 :root {
-  --page: #f6f3ee;
+  --page: #e9e8f8;        /* pale periwinkle behind everything */
   --card: #ffffff;
-  --ink: #26233a;
-  --ink-soft: #5d5a72;
-  --line: #d9d4c9;
-  --main: #4f46a8;
-  --main-ink: #ffffff;
-  --main-soft: #e9e7fb;
-  --star: #f2b33d;
-  --star-soft: #fcefd2;
-  --star-ink: #6b4a05;
+  --ink: #1d1a3a;         /* main text */
+  --ink-soft: #5a5778;    /* quieter text */
+  --line: #d6d3ee;
+  --sky: #231d5c;         /* the night sky panel */
+  --sky-deep: #17123f;
+  --main: #4a3fc0;        /* buttons and highlights */
+  --main-deep: #33298f;
+  --main-soft: #e4e1fb;
+  --star: #ffc93c;        /* gold: stars, checks, rewards */
+  --star-deep: #d99a12;
+  --star-soft: #fff3cf;
+  --star-ink: #5a3c00;
+  /* A rounded system font: nothing is downloaded, so it works offline. */
+  --font: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -18,152 +25,214 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--ink);
-  font-family: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
-  font-size: 18px;
-  line-height: 1.5;
+  font-family: var(--font);
+  font-size: 19px;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
 }
 
 #app {
-  max-width: 820px;
+  max-width: 860px;
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  padding: calc(20px + env(safe-area-inset-top)) 20px 56px;
 }
 
-h1 { font-size: 28px; margin: 0 0 8px; }
-h2 { font-size: 21px; margin: 0 0 8px; }
+h1 { font-size: 34px; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 8px; }
+h2 { font-size: 23px; font-weight: 800; margin: 0 0 8px; }
 p { margin: 0 0 14px; }
 
 .card {
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 20px;
-  margin: 16px 0;
+  border-radius: 24px;
+  padding: 22px;
+  margin: 18px 0;
 }
 .center { text-align: center; }
 .label { color: var(--ink-soft); font-size: 16px; margin-bottom: 8px; }
-.error { color: #a12626; font-weight: 600; min-height: 1px; }
+.error { color: #a12626; font-weight: 700; }
 .error:empty { display: none; }
 
-/* Buttons: at least 48px tall so they are easy to tap. */
+/* Buttons: chunky, with a darker bottom edge so they look pressable.
+   At least 52px tall so they are easy to tap. */
 .btn {
-  min-height: 52px;
-  padding: 10px 22px;
-  border-radius: 12px;
+  min-height: 54px;
+  padding: 10px 24px;
+  border-radius: 16px;
   border: 2px solid var(--line);
+  border-bottom-width: 5px;
   background: var(--card);
   color: var(--ink);
   font: inherit;
-  font-weight: 600;
+  font-weight: 700;
+  cursor: pointer;
 }
-.btn-main { background: var(--main); border-color: var(--main); color: var(--main-ink); }
-.btn:active { transform: scale(0.98); }
+.btn:active { transform: translateY(2px); }
+.btn-main { background: var(--main); border-color: var(--main-deep); color: #ffffff; }
+.btn-gold { background: var(--star); border-color: var(--star-deep); color: var(--sky-deep); font-size: 21px; min-height: 60px; padding: 10px 32px; }
+.btn-ghost { background: transparent; border-color: rgba(255, 255, 255, 0.45); color: #ffffff; }
 .row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
 .row .btn { flex: 1 1 200px; }
 
 .icon { width: 1.3em; height: 1.3em; vertical-align: -0.25em; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-.icon-star { fill: currentColor; stroke: none; }
+.icon-star, .icon-flame, .icon-moon { fill: currentColor; stroke: none; }
 
-/* Practice day circles on the home screen. */
-.dots { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
-.dot {
-  width: 56px; height: 56px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 2px dashed var(--line); color: var(--ink-soft); font-weight: 600;
+/* Top bar: title on the left, stars and album on the right. */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.top h1, .top h2 { margin: 0; }
+.top-right { display: flex; align-items: center; gap: 12px; }
+.star-count { font-weight: 800; font-size: 21px; color: var(--star-ink); background: var(--star-soft); border: 2px solid var(--star); border-radius: 28px; padding: 8px 18px; min-height: 54px; display: inline-flex; align-items: center; }
+.star-count .icon { color: var(--star-deep); margin-right: 4px; }
+
+/* The night sky: this week's practice days as star-notes on a music staff. */
+.sky {
+  background: var(--sky);
+  color: #ffffff;
+  border-radius: 30px;
+  padding: 18px 22px 26px;
+  margin: 18px 0;
+  text-align: center;
 }
-.dot-on { border: 2px solid var(--star); background: var(--star-soft); color: var(--star-ink); font-size: 24px; }
-.done-note { font-weight: 600; }
-.big-star { font-size: 72px; color: var(--star); line-height: 1; margin-bottom: 8px; }
+.sky-art svg { display: block; width: 100%; height: auto; max-height: 250px; }
+.sky .staff { stroke: rgba(255, 255, 255, 0.2); stroke-width: 2; }
+.sky .speck { fill: rgba(255, 255, 255, 0.55); }
+.sky .halo { fill: rgba(255, 201, 60, 0.16); }
+.sky .stem { stroke: var(--star); stroke-width: 4; stroke-linecap: round; }
+.sky .star-done { fill: var(--star); stroke: #fff3cf; stroke-width: 2; stroke-linejoin: round; }
+.sky .star-todo { fill: var(--sky-deep); stroke: rgba(255, 255, 255, 0.6); stroke-width: 2.5; stroke-dasharray: 5 5; stroke-linejoin: round; }
+.sky-message { font-size: 23px; font-weight: 800; margin: 6px 0 18px; }
+.sky-done p { font-weight: 700; color: var(--star); margin-bottom: 12px; }
+
+/* "Your weeks": a stack of little stars per week, joined by the streak line. */
+.weeks { display: flex; align-items: flex-end; gap: 4px; margin: 14px 0 10px; }
+.week-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.week-stars { display: flex; flex-direction: column-reverse; align-items: center; min-height: 26px; }
+.mini-star { color: #c3bfe6; font-size: 19px; line-height: 1; height: 22px; }
+.week-met .mini-star { color: var(--star); }
+.week-mark { position: relative; width: 100%; display: flex; justify-content: center; padding: 6px 0; }
+.week-mark::before, .week-mark::after { content: ""; position: absolute; top: 50%; height: 5px; margin-top: -2.5px; background: transparent; }
+.week-mark::before { left: 0; right: 50%; }
+.week-mark::after { left: 50%; right: -4px; }
+.week-mark.link-left::before, .week-mark.link-right::after { background: var(--star); }
+.mark { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%; background: var(--card); border: 2px dashed var(--line); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; color: var(--ink-soft); }
+.mark-met { background: var(--star); border: 2px solid var(--star-deep); color: var(--sky-deep); }
+.mark-holiday { border-style: solid; color: var(--main); }
+.week-label { font-size: 14px; color: var(--ink-soft); white-space: nowrap; }
+.week-now .week-label { color: var(--main); font-weight: 800; }
+.streak-line { font-weight: 700; color: var(--ink-soft); margin: 4px 0 16px; }
+.streak-on { color: var(--main); }
+.tally { display: flex; flex-wrap: wrap; gap: 8px 28px; padding-top: 14px; border-top: 2px solid var(--page); color: var(--ink-soft); }
+.tally strong { color: var(--ink); font-size: 24px; font-weight: 800; }
 
 /* The checklist: one row per item, one column per practice day. */
 .grid-wrap { overflow-x: auto; }
 .grid { width: 100%; border-collapse: collapse; }
-.grid th { font-size: 15px; color: var(--ink-soft); font-weight: 600; padding: 4px 6px; width: 64px; }
+.grid th { font-size: 15px; color: var(--ink-soft); font-weight: 700; padding: 4px 6px; width: 68px; }
 .grid th:first-child { width: auto; }
 .grid th.col-active { color: var(--main); }
-.grid td { padding: 8px 6px; border-top: 1px solid var(--line); text-align: center; }
-.grid td.item-text { text-align: left; padding-left: 0; }
+.grid td { padding: 9px 6px; border-top: 2px solid var(--page); text-align: center; }
+.grid td.item-text { text-align: left; padding-left: 0; font-weight: 600; }
 .box {
-  width: 36px; height: 36px; border-radius: 10px;
+  width: 36px; height: 36px; border-radius: 11px;
   display: inline-flex; align-items: center; justify-content: center;
-  border: 2px solid var(--line); background: var(--card); color: var(--star-ink);
+  border: 2px solid var(--line); background: var(--card); color: var(--sky-deep);
   font-size: 18px; padding: 0;
 }
-.box-on { background: var(--star-soft); border-color: var(--star); }
-.box-tap { width: 52px; height: 52px; border-color: var(--main); font-size: 24px; }
-.box-tap.box-on { border-color: var(--star); }
+.box-on { background: var(--star); border-color: var(--star-deep); }
+.box-tap { width: 56px; height: 56px; border-radius: 16px; border: 3px solid var(--main); font-size: 27px; cursor: pointer; }
+.box-tap.box-on { border-color: var(--star-deep); }
+.box-pop { animation: pop 0.35s ease-out; }
+.done-note { font-weight: 700; }
+.done-note .icon-star { color: var(--star-deep); }
+
+/* Finished screen. */
+.big-star { font-size: 84px; color: var(--star); line-height: 1; margin-bottom: 8px; }
+.earned { font-weight: 700; }
+.earned .icon { color: var(--star-deep); }
+.gift-card { background: var(--star-soft); border: 3px solid var(--star); }
 
 /* This week's list screen. */
-textarea {
-  width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--line);
+textarea, .text-input {
+  width: 100%; padding: 14px; border-radius: 16px; border: 2px solid var(--line);
   font: inherit; color: var(--ink); background: var(--card); margin-bottom: 14px;
 }
-textarea:focus, .btn:focus-visible, .box-tap:focus-visible, .chip:focus-visible { outline: 3px solid var(--main); outline-offset: 2px; }
-.preview { margin: 0 0 14px; padding-left: 28px; }
-.preview:empty::before { content: "Nothing yet."; color: var(--ink-soft); margin-left: -28px; }
+.text-input { min-height: 54px; }
+.preview { margin: 0 0 14px; padding-left: 28px; font-weight: 600; }
+.preview:empty::before { content: "Nothing yet."; color: var(--ink-soft); margin-left: -28px; font-weight: 400; }
 .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
 .chip {
   min-height: 48px; padding: 8px 16px; border-radius: 24px;
-  border: 2px solid var(--main); background: var(--main-soft); color: var(--main);
-  font: inherit; font-weight: 600; text-align: left;
+  border: 2px solid var(--main); background: var(--main-soft); color: var(--main-deep);
+  font: inherit; font-weight: 700; text-align: left; cursor: pointer;
 }
-
-/* Top bar: title on the left, stars and album on the right. */
-.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
-.top h1 { margin: 0; }
-.top-right { display: flex; align-items: center; gap: 12px; }
-.star-count { font-weight: 700; font-size: 20px; color: var(--star-ink); background: var(--star-soft); border: 2px solid var(--star); border-radius: 26px; padding: 8px 16px; min-height: 52px; display: inline-flex; align-items: center; }
-.star-count .icon { color: var(--star); margin-right: 4px; }
-.earned { font-weight: 600; }
-.earned .icon { color: var(--star); }
-.gift-card { border: 2px solid var(--star); background: var(--star-soft); }
 
 /* Gifts and stickers. */
 .gift-button { border: none; background: none; padding: 12px; cursor: pointer; border-radius: 24px; }
-.gift-button:focus-visible { outline: 3px solid var(--main); }
-.gift-art svg { width: 200px; height: 200px; display: block; }
+.gift-art svg { width: 220px; height: 284px; display: block; overflow: visible; }
 .gift-button .gift-art { animation: wiggle 1.6s ease-in-out infinite; }
+.gift-art .lid { transform-box: fill-box; transform-origin: 20% 100%; transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.gift-button.opening .gift-art { animation: none; }
+.gift-button.opening .lid { transform: translateY(-13px) rotate(-22deg); }
 .sticker { width: 88px; height: 88px; border-radius: 50%; background: #ffffff; border: 3px solid var(--line); display: flex; align-items: center; justify-content: center; margin: 0 auto; }
 .sticker svg { width: 64%; height: 64%; }
 .sticker-shiny { border-color: var(--star); background: var(--star-soft); box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--star); }
-.sticker-missing { border-style: dashed; color: var(--ink-soft); font-size: 30px; font-weight: 700; background: none; }
+.sticker-missing { border-style: dashed; color: var(--ink-soft); font-size: 30px; font-weight: 800; background: none; }
+.reveal-card { position: relative; overflow: hidden; }
 .reveal { margin: 12px 0 20px; }
-.reveal .sticker { width: 180px; height: 180px; animation: pop 0.5s ease-out; }
+.reveal .sticker { width: 190px; height: 190px; animation: pop 0.55s ease-out; }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.bit { position: absolute; top: -16px; width: 10px; height: 16px; border-radius: 3px; animation: fall 1.7s ease-in forwards; }
 .album { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 18px 10px; padding-top: 8px; }
 .slot { text-align: center; }
 .slot-name { display: block; font-size: 14px; margin-top: 8px; min-height: 21px; }
 
-@keyframes wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-5deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }
-@keyframes pop { 0% { transform: scale(0.2); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
-/* People who ask their device for less motion get none. */
-@media (prefers-reduced-motion: reduce) { .gift-button .gift-art, .reveal .sticker { animation: none; } }
-
-/* Week streak and past weeks. */
-.streak { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--main); background: var(--main-soft); border-radius: 20px; padding: 6px 14px; }
-.icon-flame { fill: currentColor; stroke: none; }
-.done-note .icon-star { color: var(--star); }
+/* Past weeks. */
 .past-items { margin: 0; padding-left: 24px; color: var(--ink-soft); }
 
 /* The real file picker is hidden; its label looks like a button. */
 .file-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.file-label { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: 1 1 200px; }
-.file-label:focus-within { outline: 3px solid var(--main); outline-offset: 2px; }
+.file-label { display: inline-flex; align-items: center; justify-content: center; flex: 1 1 200px; }
 
 /* Prize card. */
-.prize-text { font-size: 22px; font-weight: 700; }
-.gold-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px dashed var(--line); display: inline-flex; align-items: center; justify-content: center; }
-.gold-dot-on { border: 2px solid var(--star); background: var(--star-soft); color: var(--star); }
+.prize-text { font-size: 24px; font-weight: 800; }
+.dots { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.gold-dot { width: 42px; height: 42px; border-radius: 50%; border: 2px dashed var(--line); display: inline-flex; align-items: center; justify-content: center; }
+.gold-dot-on { border: 2px solid var(--star-deep); background: var(--star); color: var(--sky-deep); }
 
 /* Grown-ups area. */
 .hold-wrap { text-align: center; margin-top: 28px; }
-.hold { position: relative; overflow: hidden; min-height: 48px; padding: 8px 20px; border-radius: 24px; border: 1px solid var(--line); background: none; color: var(--ink-soft); font: inherit; font-size: 15px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.hold { position: relative; overflow: hidden; min-height: 48px; padding: 8px 20px; border-radius: 24px; border: 2px solid var(--line); background: none; color: var(--ink-soft); font: inherit; font-size: 15px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .hold-fill { position: absolute; inset: 0; width: 0; background: var(--main-soft); }
 .hold.holding .hold-fill { width: 100%; transition: width 3s linear; }
 .hold-text { position: relative; }
 .stepper { display: flex; align-items: center; gap: 16px; }
-.step-btn { width: 56px; font-size: 26px; padding: 0; }
-.step-value { font-size: 26px; font-weight: 700; min-width: 40px; text-align: center; }
-.holiday-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
-.toggle-on { background: var(--main-soft); border-color: var(--main); color: var(--main); }
-.text-input { width: 100%; min-height: 52px; padding: 10px 14px; border-radius: 12px; border: 2px solid var(--line); font: inherit; color: var(--ink); background: var(--card); margin-bottom: 14px; }
-.text-input:focus, .hold:focus-visible { outline: 3px solid var(--main); outline-offset: 2px; }
+.step-btn { width: 58px; font-size: 26px; padding: 0; }
+.step-value { font-size: 28px; font-weight: 800; min-width: 40px; text-align: center; }
+.holiday-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 2px solid var(--page); }
+.toggle-on { background: var(--main-soft); border-color: var(--main); color: var(--main-deep); }
+
+/* A clear outline on whatever the keyboard is focused on. */
+textarea:focus, .text-input:focus, .btn:focus-visible, .box-tap:focus-visible, .chip:focus-visible,
+.gift-button:focus-visible, .hold:focus-visible, .file-label:focus-within { outline: 4px solid var(--main); outline-offset: 2px; }
+.sky .btn:focus-visible { outline-color: #ffffff; }
+
+@keyframes wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-5deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }
+@keyframes pop { 0% { transform: scale(0.3); } 65% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(520px) rotate(var(--turn)); opacity: 0; } }
+
+/* People who ask their device for less motion get none. */
+@media (prefers-reduced-motion: reduce) {
+  .gift-button .gift-art, .reveal .sticker, .box-pop, .bit { animation: none; }
+  .gift-art .lid, .hold.holding .hold-fill { transition: none; }
+}
+
+/* Narrow screens (a phone): tighter spacing and smaller headings. */
+@media (max-width: 520px) {
+  body { font-size: 17px; }
+  h1 { font-size: 27px; }
+  .card { padding: 18px; }
+  .sky { padding: 14px 14px 22px; }
+  .sky-message { font-size: 20px; }
+  .week-label { font-size: 12px; }
+  .mini-star { font-size: 16px; height: 19px; }
+  .mark { width: 26px; height: 26px; }
+}
