@@ -185,6 +185,9 @@ textarea, .text-input {
 .reveal .sticker { width: 190px; height: 190px; animation: pop 0.55s ease-out; }
 .confetti { position: absolute; inset: 0; pointer-events: none; }
 .bit { position: absolute; top: -16px; width: 10px; height: 16px; border-radius: 3px; animation: fall 1.7s ease-in forwards; }
+/* The small puff of confetti when a box is checked. */
+.burst { position: fixed; width: 0; height: 0; pointer-events: none; z-index: 5; }
+.spark { position: absolute; left: -4px; top: -6px; width: 8px; height: 12px; border-radius: 2px; animation: fly 0.7s ease-out forwards; }
 .album { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 18px 10px; padding-top: 8px; }
 .slot { text-align: center; }
 .slot-name { display: block; font-size: 14px; margin-top: 8px; min-height: 21px; }
@@ -227,11 +230,12 @@ textarea:focus, .text-input:focus, .btn:focus-visible, .box-tap:focus-visible, .
 
 @keyframes wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-5deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }
 @keyframes pop { 0% { transform: scale(0.3); } 65% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes fly { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--turn)); opacity: 0; } }
 @keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(520px) rotate(var(--turn)); opacity: 0; } }
 
 /* People who ask their device for less motion get none. */
 @media (prefers-reduced-motion: reduce) {
-  .gift-button .gift-art, .reveal .sticker, .box-pop, .bit { animation: none; }
+  .gift-button .gift-art, .reveal .sticker, .box-pop, .bit, .spark { animation: none; }
   .gift-art .lid, .hold.holding .hold-fill { transition: none; }
 }
 
