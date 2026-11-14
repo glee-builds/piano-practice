@@ -199,6 +199,8 @@ textarea, .text-input {
 .log-checked { color: var(--ink-soft); }
 .log-stars { font-weight: 800; color: var(--star-ink); }
 .log-stars .icon { color: var(--star-deep); }
+.log-change { min-height: 48px; padding: 6px 18px; }
+.day-picks { display: grid; gap: 12px; }
 .past-items { margin: 0; padding-left: 24px; color: var(--ink-soft); }
 
 /* The real file picker is hidden; its label looks like a button. */
