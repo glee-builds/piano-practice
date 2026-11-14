@@ -3,7 +3,7 @@
 
 const KEY = "piano-practice-v1";
 
-const EMPTY = { week: null, lastItems: [] };
+const EMPTY = { week: null, lastItems: [], stars: 0, owned: {} };
 
 export function load() {
   try {

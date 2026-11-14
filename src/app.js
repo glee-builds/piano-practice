@@ -10,14 +10,16 @@ import {
   findDay,
   startDay,
   toggleItem,
-  finishDay,
   finishedDayCount,
 } from "./week.js";
+import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
+import { SETS, ALL_STICKERS } from "../data/stickers.js";
 import { load, save } from "./storage.js";
 
 const app = document.getElementById("app");
 let state = load();
 let screen = "home";
+let justOpened = null; // what was inside the gift that was just opened
 
 const today = () => dateString(new Date());
 
@@ -74,7 +76,7 @@ function homeScreen() {
   const week = state.week;
   if (!week) {
     return [
-      el("h1", {}, "Practice Stars"),
+      topBar("Practice Stars"),
       el("section", { class: "card" },
         el("h2", {}, state.lastItems.length ? "Start your new week" : "Start your first week"),
         el("p", {}, "Add the list from your teacher's note, then check things off each day you practice."),
@@ -97,8 +99,13 @@ function homeScreen() {
     );
   }
 
+  const waiting = unopenedGifts(week).length;
   return [
-    el("h1", {}, "This week's practice"),
+    topBar("This week's practice"),
+    waiting > 0 && el("section", { class: "card gift-card" },
+      el("p", {}, waiting === 1 ? "You have a gift to open." : `You have ${waiting} gifts to open.`),
+      button(waiting === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "main")
+    ),
     el("section", { class: "card" },
       el("p", { class: "label" }, "Practice days"),
       dayDots(done),
@@ -114,6 +121,17 @@ function homeScreen() {
       )
     ),
   ];
+}
+
+// The page title with the star total and the way into the sticker album.
+function topBar(title) {
+  return el("div", { class: "top" },
+    el("h1", {}, title),
+    el("div", { class: "top-right" },
+      el("span", { class: "star-count", "aria-label": `${state.stars} stars` }, icon("star"), ` ${state.stars}`),
+      button("Sticker album", () => go("album"))
+    )
+  );
 }
 
 function goalMessage(done) {
@@ -206,7 +224,7 @@ function practiceScreen() {
       el("div", { class: "row" },
         button("Back", () => go("home")),
         button("Finish practice", () => {
-          update({ week: finishDay(state.week, day.date) });
+          update(awardFinish(state.week, day.date, state.stars, DEFAULT_GOAL));
           go("finished");
         }, "main")
       )
@@ -225,8 +243,109 @@ function finishedScreen() {
       el("div", { class: "big-star" }, icon("star")),
       el("h1", {}, headline),
       el("p", {}, `${count} of ${total} checked today. ${goalMessage(finishedDayCount(week))}`),
-      button("Done", () => go("home"), "main")
+      el("p", { class: "earned" }, icon("star"), ` You earned ${day ? day.stars : 0} ${day && day.stars === 1 ? "star" : "stars"} today.`),
+      unopenedGifts(week).length > 0
+        ? button(unopenedGifts(week).length === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "main")
+        : button("Done", () => go("home"), "main")
     ),
+  ];
+}
+
+// ---------- Gifts ----------
+
+const GIFT_NAMES = { small: "A gift", big: "A big gift", golden: "A golden gift" };
+
+function giftBox(kind) {
+  const colors = {
+    small: ["#7a6ad8", "#4f46a8", "#f2b33d"],
+    big: ["#58b7d6", "#2f7f9c", "#d9534f"],
+    golden: ["#f7c948", "#b97f12", "#ffffff"],
+  }[kind];
+  const box = el("div", { class: `gift-art gift-${kind}` });
+  box.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true">
+    <rect x="6" y="20" width="36" height="24" rx="3" fill="${colors[0]}" stroke="${colors[1]}" stroke-width="2"/>
+    <rect x="3" y="12" width="42" height="10" rx="3" fill="${colors[0]}" stroke="${colors[1]}" stroke-width="2"/>
+    <rect x="21" y="12" width="6" height="32" fill="${colors[2]}"/>
+    <path d="M24 12c-4-9-13-7-10-2 2 3 6 2 10 2zM24 12c4-9 13-7 10-2-2 3-6 2-10 2z" fill="${colors[2]}" stroke="${colors[1]}" stroke-width="1.5"/>
+  </svg>`;
+  return box;
+}
+
+function stickerArt(sticker, shiny) {
+  const art = el("div", { class: `sticker ${shiny ? "sticker-shiny" : ""}` });
+  art.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true">${sticker.art}</svg>`;
+  return art;
+}
+
+function giftScreen() {
+  const waiting = unopenedGifts(state.week);
+
+  if (justOpened) {
+    const inside = justOpened;
+    const next = waiting.length > 0
+      ? button("Open the next gift", () => { justOpened = null; render(); }, "main")
+      : button("Done", () => { justOpened = null; go("home"); }, "main");
+    if (!inside.sticker) {
+      return [el("section", { class: "card center" },
+        el("div", { class: "big-star" }, icon("star")),
+        el("h1", {}, "Your album is full"),
+        el("p", {}, `You have every sticker, so this gift holds ${inside.bonusStars} extra stars.`),
+        next)];
+    }
+    const set = SETS.find((s) => s.stickers.includes(inside.sticker));
+    return [el("section", { class: "card center" },
+      el("p", { class: "label" }, inside.shiny ? "New shiny sticker" : "New sticker"),
+      el("div", { class: "reveal" }, stickerArt(inside.sticker, inside.shiny)),
+      el("h1", {}, inside.sticker.name),
+      el("p", {}, `It's in the ${set.name} page of your album.`),
+      next)];
+  }
+
+  if (waiting.length === 0) return homeScreen();
+  const gift = waiting[0];
+  return [el("section", { class: "card center" },
+    el("h1", {}, GIFT_NAMES[gift.kind]),
+    el("button", {
+      class: "gift-button", type: "button", "aria-label": "Open the gift",
+      onClick: () => {
+        const result = openGift(state.week, state.owned, state.stars,
+          gift.date, gift.index, ALL_STICKERS, Math.random);
+        justOpened = result.inside;
+        update({ week: result.week, owned: result.owned, stars: result.stars });
+        render();
+      },
+    }, giftBox(gift.kind)),
+    el("p", {}, "Tap the gift to open it."))];
+}
+
+// ---------- Sticker album ----------
+
+function albumScreen() {
+  const total = ALL_STICKERS.length;
+  const have = ALL_STICKERS.filter((s) => state.owned[s.id]).length;
+  return [
+    el("div", { class: "top" },
+      el("h1", {}, "Sticker album"),
+      el("div", { class: "top-right" },
+        el("span", { class: "star-count", "aria-label": `${state.stars} stars` }, icon("star"), ` ${state.stars}`),
+        button("Back", () => go("home")))
+    ),
+    el("p", { class: "label" }, `${have} of ${total} stickers`),
+    SETS.map((set) => {
+      const count = set.stickers.filter((s) => state.owned[s.id]).length;
+      return el("section", { class: "card" },
+        el("h2", {}, `${set.name} `, el("span", { class: "label" }, `${count} of ${set.stickers.length}`)),
+        el("div", { class: "album" }, set.stickers.map((sticker) => {
+          const mine = state.owned[sticker.id];
+          return mine
+            ? el("div", { class: "slot" }, stickerArt(sticker, mine.shiny),
+                el("span", { class: "slot-name" }, sticker.name))
+            : el("div", { class: "slot slot-empty", role: "img", "aria-label": "Sticker not found yet" },
+                el("div", { class: "sticker sticker-missing" }, "?"),
+                el("span", { class: "slot-name" }, " "));
+        }))
+      );
+    }),
   ];
 }
 
@@ -302,6 +421,17 @@ function listScreen() {
 // ---------- Start a new week ----------
 
 function newWeekScreen() {
+  if (unopenedGifts(state.week).length > 0) {
+    return [
+      el("h1", {}, "Start a new week"),
+      el("section", { class: "card" },
+        el("p", {}, "You still have a gift from this week. Open it first so it isn't lost."),
+        el("div", { class: "row" },
+          button("Back", () => go("home")),
+          button("Open your gift", () => go("gift"), "main"))
+      ),
+    ];
+  }
   return [
     el("h1", {}, "Start a new week"),
     el("section", { class: "card" },
@@ -328,12 +458,16 @@ const SCREENS = {
   finished: finishedScreen,
   list: listScreen,
   "new-week": newWeekScreen,
+  gift: giftScreen,
+  album: albumScreen,
 };
 
 function render() {
-  const needsWeek = ["practice", "finished", "new-week"];
+  const needsWeek = ["practice", "finished", "new-week", "gift"];
   if (!state.week && needsWeek.includes(screen)) screen = "home";
-  app.replaceChildren(...SCREENS[screen]());
+  // A screen is a list of parts. Lists inside it are flattened, and parts
+  // that are switched off (false or null) are skipped.
+  app.replaceChildren(...SCREENS[screen]().flat(Infinity).filter(Boolean));
 }
 
 render();

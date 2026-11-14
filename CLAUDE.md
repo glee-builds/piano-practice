@@ -33,9 +33,10 @@ Kids' app rules in `../CLAUDE.md` apply, with these changes for this project:
 index.html         the one page; screens are drawn into it by src/app.js
 styles.css         all styling
 src/week.js        the week's data and rules (no page code, so it is testable)
+src/rewards.js     the rules for stars, gifts, and stickers (testable)
 src/storage.js     saves and loads from localStorage
 src/app.js         draws the screens and handles taps
-data/              sticker sets (Phase 2)
+data/stickers.js   the sticker album: four sets of ten original drawings
 tests/             node --test files
 docs/decisions.md  decision history
 ```
