@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { newWeek, startDay, finishDay } from "../src/week.js";
-import { shortDate, summarize, weekStreak } from "../src/history.js";
+import { shortDate, summarize, dayLog, weekStreak } from "../src/history.js";
 
 function weekWithDays(count) {
   let week = newWeek(["Scale"], "2026-11-10");
@@ -21,6 +21,10 @@ test("shortDate", () => {
 test("summarize records whether the goal was reached", () => {
   assert.deepEqual(summarize(weekWithDays(2), 3), {
     startedOn: "2026-11-10", days: 2, goal: 3, met: false, holiday: false, items: ["Scale"],
+    log: [
+      { date: "2026-11-11", checked: 0, of: 1, stars: 0 },
+      { date: "2026-11-12", checked: 0, of: 1, stars: 0 },
+    ],
   });
   assert.equal(summarize(weekWithDays(3), 3).met, true);
 });
@@ -63,4 +67,17 @@ test("recentWeeks ends with the current week and marks the weeks in the streak",
   assert.equal(weeks[4].current, true);
   assert.equal(weeks.filter((w) => w.inStreak).length, weekStreak(history, weekWithDays(1), 3));
   assert.equal(recentWeeks(history, weekWithDays(3), 3, 2).length, 2);
+});
+
+test("the day log lists finished practices only, oldest first", () => {
+  let week = newWeek(["Scale", "Piece"], "2026-11-10");
+  week = startDay(week, "2026-11-12");
+  week = { ...week, days: [{ date: "2026-11-12", done: [1, 2], finished: true, stars: 4 }] };
+  week = startDay(week, "2026-11-11");
+  week = { ...week, days: week.days.map((day) => (day.date === "2026-11-11" ? { ...day, done: [1], finished: true, stars: 1 } : day)) };
+  week = startDay(week, "2026-11-13"); // started, not finished
+  assert.deepEqual(dayLog(week), [
+    { date: "2026-11-11", checked: 1, of: 2, stars: 1 },
+    { date: "2026-11-12", checked: 2, of: 2, stars: 4 },
+  ]);
 });

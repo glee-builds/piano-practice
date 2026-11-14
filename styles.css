@@ -79,7 +79,11 @@ p { margin: 0 0 14px; }
 /* Top bar: title on the left, stars and album on the right. */
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .top h1, .top h2 { margin: 0; }
-.top-right { display: flex; align-items: center; gap: 12px; }
+.top-right { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* The Home button at the top of every screen except home. */
+.home-bar { margin-bottom: 14px; }
+.home-btn { display: inline-flex; align-items: center; gap: 8px; }
 .star-count { font-weight: 800; font-size: 21px; color: var(--star-ink); background: var(--star-soft); border: 2px solid var(--star); border-radius: 28px; padding: 8px 18px; min-height: 54px; display: inline-flex; align-items: center; }
 .star-count .icon { color: var(--star-deep); margin-right: 4px; }
 
@@ -185,7 +189,13 @@ textarea, .text-input {
 .slot { text-align: center; }
 .slot-name { display: block; font-size: 14px; margin-top: 8px; min-height: 21px; }
 
-/* Past weeks. */
+/* Practice history: one line per finished practice. */
+.log { list-style: none; margin: 0 0 14px; padding: 0; }
+.log-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 12px 0; border-top: 2px solid var(--page); }
+.log-date { font-weight: 700; flex: 1 1 130px; }
+.log-checked { color: var(--ink-soft); }
+.log-stars { font-weight: 800; color: var(--star-ink); }
+.log-stars .icon { color: var(--star-deep); }
 .past-items { margin: 0; padding-left: 24px; color: var(--ink-soft); }
 
 /* The real file picker is hidden; its label looks like a button. */

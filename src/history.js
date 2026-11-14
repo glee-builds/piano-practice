@@ -1,7 +1,10 @@
 // Past weeks and the week streak. Nothing here touches the page.
 //
 // When a new week starts, the old one is kept as a short summary:
-// { startedOn, days, goal, met, holiday, items: ["C major scale", ...] }
+// { startedOn, days, goal, met, holiday, items: ["C major scale", ...],
+//   log: [{ date, checked, of, stars }] }
+// `log` has one line per finished practice. Weeks put away before the log
+// was added don't have one.
 
 import { finishedDayCount } from "./week.js";
 
@@ -13,6 +16,15 @@ export function shortDate(dateStr) {
   return `${MONTHS[month - 1]} ${day}`;
 }
 
+// One line per finished practice in a week, oldest first:
+// { date, checked, of, stars } where `of` is how many items were on the list.
+export function dayLog(week) {
+  return week.days
+    .filter((day) => day.finished)
+    .map((day) => ({ date: day.date, checked: day.done.length, of: week.items.length, stars: day.stars || 0 }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 export function summarize(week, goal) {
   const days = finishedDayCount(week);
   return {
@@ -22,6 +34,7 @@ export function summarize(week, goal) {
     met: days >= goal,
     holiday: Boolean(week.holiday),
     items: week.items.map((item) => item.text),
+    log: dayLog(week),
   };
 }
 
