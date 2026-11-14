@@ -5,7 +5,7 @@
 // hide everything already saved on a device.
 const KEY = "piano-practice-v1";
 
-const EMPTY = { week: null, lastItems: [], stars: 0, owned: {}, history: [], goal: 3, prize: null };
+const EMPTY = { week: null, lastItems: [], stars: 0, owned: {}, history: [], goal: 3, prize: null, scene: [] };
 
 export function load() {
   try {

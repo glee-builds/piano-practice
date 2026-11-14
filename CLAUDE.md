@@ -38,6 +38,7 @@ src/week.js        the week's data and rules (no page code, so it is testable)
 src/rewards.js     the rules for stars, gifts, and stickers (testable)
 src/history.js     past weeks and the week streak (testable)
 src/prize.js       the grown-up-set prize and its progress (testable)
+src/scene.js       the sticker scene: adding, moving, resizing (testable)
 src/backup.js      builds and checks the backup file (testable)
 src/storage.js     saves and loads from localStorage
 src/app.js         draws the screens and handles taps

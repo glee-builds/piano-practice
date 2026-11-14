@@ -18,6 +18,7 @@ import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
 import { shortDate, summarize, dayLog, weekStreak, totals, recentWeeks } from "./history.js";
 import { goldenCount, prizeProgress } from "./prize.js";
 import { makeBackup, readBackup } from "./backup.js";
+import { MAX_ON_SCENE, MIN_SIZE, MAX_SIZE, addToScene, moveInScene, resizeInScene, removeFromScene } from "./scene.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
 import { load, save } from "./storage.js";
 
@@ -26,6 +27,7 @@ let state = load();
 let screen = "home";
 let justOpened = null; // what was inside the gift that was just opened
 let justChecked = null; // the item that was just checked, so its box can pop
+let sceneSelected = null; // the key of the sticker picked on the scene, if any
 let practiceOn = null; // an earlier day being recorded or changed; null means today
 const calmMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -46,6 +48,7 @@ function go(name) {
     backupNote = "";
     restoreDraft = null;
     practiceOn = null;
+    sceneSelected = null;
     // A day that was started but left with nothing checked is put away.
     if (state.week && dropEmptyDays(state.week) !== state.week) update({ week: dropEmptyDays(state.week) });
   }
@@ -180,6 +183,7 @@ function tiles() {
       el("span", { class: "tile-text" }, el("strong", {}, label), el("span", {}, note)));
   return el("nav", { class: "tiles", "aria-label": "Pages" },
     tile("album", "Stickers", `${have} of ${ALL_STICKERS.length}`, "album"),
+    tile("scene", "My scene", "Place your stickers", "scene"),
     tile("history", "History", "Every practice", "history"));
 }
 
@@ -1017,6 +1021,126 @@ function addDayScreen() {
   ];
 }
 
+// ---------- Sticker scene ----------
+
+// How wide a sticker is on the scene, as a percent of the picture, by size.
+const SCENE_WIDTHS = { 1: 13, 2: 19, 3: 27 };
+
+// The picture behind the stickers: dusk over rolling hills.
+const SCENE_BACKDROP = `<svg class="scene-back" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs>
+    <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1650"/><stop offset="0.550" stop-color="#4b3aa8"/><stop offset="0.850" stop-color="#e58aa6"/><stop offset="1" stop-color="#ffc98a"/></linearGradient>
+    <linearGradient id="hill-far" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a48b8"/><stop offset="1" stop-color="#3c2f8c"/></linearGradient>
+    <linearGradient id="hill-near" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a8f7a"/><stop offset="1" stop-color="#1f6a5c"/></linearGradient>
+    <linearGradient id="hill-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#58b98f"/><stop offset="1" stop-color="#2f8a6a"/></linearGradient>
+    <radialGradient id="scene-moon"><stop offset="0" stop-color="#fff6d6" stop-opacity="0.600"/><stop offset="1" stop-color="#fff6d6" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#dusk)"/>
+  <g fill="#ffffff"><circle cx="40" cy="30" r="1.400" opacity="0.800"/><circle cx="96" cy="62" r="1" opacity="0.600"/><circle cx="150" cy="24" r="1.300" opacity="0.700"/><circle cx="212" cy="50" r="1" opacity="0.500"/><circle cx="262" cy="20" r="1.400" opacity="0.800"/><circle cx="300" cy="84" r="1" opacity="0.500"/><circle cx="372" cy="110" r="1.200" opacity="0.600"/><circle cx="20" cy="100" r="1" opacity="0.500"/><circle cx="180" cy="96" r="1.100" opacity="0.500"/></g>
+  <circle cx="330" cy="52" r="46" fill="url(#scene-moon)"/><circle cx="330" cy="52" r="20" fill="#fff6d6"/>
+  <path d="M0 196C60 150 120 150 180 186S300 160 400 190V300H0z" fill="url(#hill-far)"/>
+  <path d="M0 232C80 190 150 214 220 226S340 196 400 222V300H0z" fill="url(#hill-near)"/>
+  <path d="M0 268C90 240 170 262 250 258S350 244 400 256V300H0z" fill="url(#hill-front)"/>
+</svg>`;
+
+// One sticker on the scene. It can be dragged with a finger or mouse, or
+// moved with the arrow keys. A tap picks it, so the buttons below act on it.
+function placedSticker(item) {
+  const sticker = ALL_STICKERS.find((entry) => entry.id === item.id);
+  if (!sticker) return null;
+  const picked = item.key === sceneSelected;
+  const node = el("button", {
+    class: `placed ${picked ? "placed-on" : ""}`, type: "button",
+    "aria-label": `${sticker.name}${picked ? ", picked" : ""}`, "aria-pressed": String(picked),
+  }, stickerArt(sticker, Boolean(state.owned[item.id] && state.owned[item.id].shiny)));
+  node.style.left = `${item.x}%`;
+  node.style.top = `${item.y}%`;
+  node.style.width = `${SCENE_WIDTHS[item.size]}%`;
+  if (picked) node.dataset.picked = "yes";
+
+  let drag = null;
+  node.addEventListener("pointerdown", (event) => {
+    drag = { board: node.parentElement.getBoundingClientRect(), fromX: event.clientX, fromY: event.clientY, moved: false, x: item.x, y: item.y };
+    node.setPointerCapture(event.pointerId);
+  });
+  node.addEventListener("pointermove", (event) => {
+    if (!drag) return;
+    if (Math.hypot(event.clientX - drag.fromX, event.clientY - drag.fromY) > 6) drag.moved = true;
+    if (!drag.moved) return;
+    drag.x = ((event.clientX - drag.board.left) / drag.board.width) * 100;
+    drag.y = ((event.clientY - drag.board.top) / drag.board.height) * 100;
+    node.style.left = `${drag.x}%`;
+    node.style.top = `${drag.y}%`;
+  });
+  const drop = () => {
+    if (!drag) return;
+    const { x, y } = drag;
+    drag = null;
+    sceneSelected = item.key;
+    update({ scene: moveInScene(state.scene, item.key, x, y) });
+    render();
+  };
+  node.addEventListener("pointerup", drop);
+  node.addEventListener("pointercancel", drop);
+  node.addEventListener("keydown", (event) => {
+    const steps = { ArrowLeft: [-3, 0], ArrowRight: [3, 0], ArrowUp: [0, -3], ArrowDown: [0, 3] }[event.key];
+    if (event.key === "Enter" || event.key === " ") { event.preventDefault(); sceneSelected = item.key; render(); return; }
+    if (!steps) return;
+    event.preventDefault();
+    sceneSelected = item.key;
+    update({ scene: moveInScene(state.scene, item.key, item.x + steps[0], item.y + steps[1]) });
+    render();
+  });
+  return node;
+}
+
+function sceneScreen() {
+  const scene = state.scene || [];
+  const mine = ALL_STICKERS.filter((sticker) => state.owned[sticker.id]);
+  const picked = scene.find((item) => item.key === sceneSelected);
+  const full = scene.length >= MAX_ON_SCENE;
+  const change = (next) => { update({ scene: next }); render(); };
+
+  const board = el("div", { class: "scene" });
+  board.innerHTML = SCENE_BACKDROP;
+  board.append(...scene.map(placedSticker).filter(Boolean));
+  // Tapping the picture itself lets go of the picked sticker.
+  board.addEventListener("pointerdown", (event) => {
+    if (event.target.closest(".placed") || sceneSelected === null) return;
+    sceneSelected = null;
+    render();
+  });
+
+  return [
+    el("h1", {}, "My sticker scene"),
+    board,
+    picked
+      ? el("div", { class: "row scene-tools" },
+          button("Bigger", () => change(resizeInScene(scene, picked.key, 1)), picked.size >= MAX_SIZE ? "off" : "plain"),
+          button("Smaller", () => change(resizeInScene(scene, picked.key, -1)), picked.size <= MIN_SIZE ? "off" : "plain"),
+          button("Take off", () => { sceneSelected = null; change(removeFromScene(scene, picked.key)); }))
+      : el("p", { class: "label scene-hint" }, scene.length > 0
+          ? "Drag a sticker to move it. Tap one to make it bigger, smaller, or take it off."
+          : "Tap a sticker below to put it on the picture."),
+    el("section", { class: "card" },
+      el("h2", {}, "Your stickers"),
+      mine.length === 0 && el("p", {}, "Open a gift to get your first sticker."),
+      full && el("p", { class: "label" }, `The picture is full (${MAX_ON_SCENE} stickers). Take one off to add another.`),
+      el("div", { class: "tray" }, mine.map((sticker) =>
+        el("button", {
+          class: "tray-pick", type: "button", "aria-label": `Add ${sticker.name} to the picture`,
+          onClick: () => {
+            if (full) return;
+            const next = addToScene(scene, sticker.id);
+            sceneSelected = next[next.length - 1].key;
+            change(next);
+            window.scrollTo(0, 0);
+          },
+        }, stickerArt(sticker, state.owned[sticker.id].shiny))))
+    ),
+  ];
+}
+
 // ---------- Drawing ----------
 
 const SCREENS = {
@@ -1029,6 +1153,7 @@ const SCREENS = {
   album: albumScreen,
   history: historyScreen,
   "add-day": addDayScreen,
+  scene: sceneScreen,
   parent: parentScreen,
 };
 
@@ -1037,10 +1162,14 @@ function render() {
   if (!state.week && needsWeek.includes(screen)) screen = "home";
   // A screen is a list of parts. Lists inside it are flattened, and parts
   // that are switched off (false or null) are skipped.
+  const wasOnScene = Boolean(document.activeElement && document.activeElement.closest(".placed"));
   const parts = SCREENS[screen]().flat(Infinity).filter(Boolean);
   // Every screen except home starts with the Home button.
   if (screen !== "home") parts.unshift(homeBar());
   app.replaceChildren(...parts);
+  // On the scene, keep the keyboard on the picked sticker after a redraw.
+  const pickedNode = app.querySelector('.placed[data-picked="yes"]');
+  if (pickedNode && wasOnScene) pickedNode.focus({ preventScroll: true });
 }
 
 render();
