@@ -1,6 +1,6 @@
-# piano-practice: working rules for Claude Code
+# piano-stars: working rules for Claude Code
 
-Shared rules for all coding projects are in `../CLAUDE.md`, and they apply here. This file adds this project's rules. The full decision history is in `docs/decisions.md`; when a decision changes, update that file and note why. The original plan and phases are in `../_briefs/piano-practice/brief.md`.
+Shared rules for all coding projects are in `../CLAUDE.md`, and they apply here. This file adds this project's rules. The full decision history is in `docs/decisions.md`; when a decision changes, update that file and note why. The original plan and phases are in `../_briefs/piano-stars/brief.md`.
 
 ## Workflow
 

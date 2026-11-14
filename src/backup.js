@@ -3,6 +3,7 @@
 // The functions here only build and check the file's text; app.js does
 // the saving and sharing.
 
+// Keeps the project's first name on purpose, so older backup files still load.
 const APP = "piano-practice";
 
 export function makeBackup(state, savedOn) {

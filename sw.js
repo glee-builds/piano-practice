@@ -15,7 +15,7 @@
 // This only handles the app's own files. Practice data is stored
 // separately on the device and never passes through here.
 
-const CACHE = "practice-stars-v1";
+const CACHE = "piano-stars-v1";
 
 // Every file the app needs, relative to this file. "./" is the app itself.
 const FILES = [

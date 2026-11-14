@@ -1,8 +1,8 @@
-# piano-practice
+# piano-stars
 
 **Piano Stars**: a piano practice tracker for an iPad home screen. The player enters the week's practice list from the teacher's note, checks items off on each practice day, and opens a gift box with a sticker after each finished practice. Everything is stored on the device; there are no accounts and nothing is sent anywhere. Built with plain HTML, CSS, and JavaScript, with no build step.
 
-**Live:** https://glee-builds.github.io/piano-practice/
+**Live:** https://glee-builds.github.io/piano-stars/
 
 ## Put it on an iPad
 
