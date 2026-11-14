@@ -1,7 +1,7 @@
 // Past weeks and the week streak. Nothing here touches the page.
 //
 // When a new week starts, the old one is kept as a short summary:
-// { startedOn, days, goal, met, holiday, items: ["C major scale", ...] }
+// { startedOn, days, goal, met, holiday, items: ["C major scale", ...], photoId }
 
 import { finishedDayCount } from "./week.js";
 
@@ -22,6 +22,7 @@ export function summarize(week, goal) {
     met: days >= goal,
     holiday: false,
     items: week.items.map((item) => item.text),
+    photoId: week.photoId || null,
   };
 }
 
