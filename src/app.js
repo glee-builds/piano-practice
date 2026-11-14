@@ -85,7 +85,7 @@ function homeScreen() {
   const week = state.week;
   if (!week) {
     return [
-      topBar("Practice Stars"),
+      topBar("Starry Keys"),
       el("section", { class: "card" },
         el("h2", {}, state.lastItems.length ? "Start your new week" : "Start your first week"),
         el("p", {}, "Add the list from your teacher's note, then check things off each day you practice."),
@@ -714,7 +714,7 @@ let backupNote = ""; // a short message shown in the backup card
 let restoreDraft = null; // a backup file that was picked, waiting for a yes
 
 async function saveBackup() {
-  const name = `practice-stars-backup-${today()}.json`;
+  const name = `starry-keys-backup-${today()}.json`;
   const file = new File([makeBackup(state, today())], name, { type: "application/json" });
   // On an iPad this opens the share sheet ("Save to Files", AirDrop, ...).
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
