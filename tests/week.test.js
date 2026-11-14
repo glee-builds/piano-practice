@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   dateString, dayName, parseList, newWeek, replaceItems,
   startDay, toggleItem, finishDay, finishedDayCount, goalMet, findDay,
+  missedDates, dropEmptyDays,
 } from "../src/week.js";
 
 test("dateString uses the local date", () => {
@@ -58,4 +59,32 @@ test("changing the list keeps checks for unchanged items and drops removed ones"
   week = replaceItems(week, ["Piece", "Theory"]);
   assert.deepEqual(week.items, [{ id: 2, text: "Piece" }, { id: 3, text: "Theory" }]);
   assert.deepEqual(findDay(week, "2026-11-11").done, [2]);
+});
+
+test("a day added later for an earlier date is kept in date order", () => {
+  let week = newWeek(["Scale"], "2026-11-10");
+  week = startDay(week, "2026-11-13");
+  week = startDay(week, "2026-11-11");
+  assert.deepEqual(week.days.map((day) => day.date), ["2026-11-11", "2026-11-13"]);
+});
+
+test("missed dates run from yesterday back to the start of the week", () => {
+  let week = newWeek(["Scale"], "2026-11-10");
+  week = startDay(week, "2026-11-12");
+  assert.deepEqual(missedDates(week, "2026-11-14"), ["2026-11-13", "2026-11-11", "2026-11-10"]);
+  assert.deepEqual(missedDates(week, "2026-11-10"), []);
+  assert.deepEqual(missedDates(week, "2026-11-14", 2), ["2026-11-13", "2026-11-11"]);
+});
+
+test("missed dates cross a month boundary", () => {
+  const week = newWeek(["Scale"], "2026-10-30");
+  assert.deepEqual(missedDates(week, "2026-11-02"), ["2026-11-01", "2026-10-31", "2026-10-30"]);
+});
+
+test("empty days are dropped, used ones are kept", () => {
+  let week = newWeek(["Scale"], "2026-11-10");
+  week = finishDay(startDay(week, "2026-11-10"), "2026-11-10");
+  week = toggleItem(startDay(week, "2026-11-11"), "2026-11-11", 1);
+  week = startDay(week, "2026-11-12");
+  assert.deepEqual(dropEmptyDays(week).days.map((day) => day.date), ["2026-11-10", "2026-11-11"]);
 });

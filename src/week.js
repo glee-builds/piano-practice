@@ -64,10 +64,37 @@ export function findDay(week, date) {
   return week.days.find((day) => day.date === date) || null;
 }
 
-// Adds a practice day for this date, unless there already is one.
+// Adds a practice day for this date, unless there already is one. Days are
+// kept in date order, so a day added later for an earlier date lands in
+// the right place.
 export function startDay(week, date) {
   if (findDay(week, date)) return week;
-  return { ...week, days: [...week.days, { date, done: [], finished: false }] };
+  const days = [...week.days, { date, done: [], finished: false }]
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return { ...week, days };
+}
+
+// "2026-11-13" moved by a number of days, e.g. -1 for the day before.
+function shiftDate(dateStr, by) {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  return dateString(new Date(year, month - 1, day + by));
+}
+
+// The days since this week started, up to yesterday, that have no practice
+// recorded. Newest first, and no more than `limit` of them.
+export function missedDates(week, today, limit = 7) {
+  const dates = [];
+  for (let date = shiftDate(today, -1); date >= week.startedOn && dates.length < limit; date = shiftDate(date, -1)) {
+    if (!findDay(week, date)) dates.push(date);
+  }
+  return dates;
+}
+
+// Removes days that were started but never used: nothing checked and not
+// finished. This keeps an empty column out of the checklist.
+export function dropEmptyDays(week) {
+  const days = week.days.filter((day) => day.finished || day.done.length > 0);
+  return days.length === week.days.length ? week : { ...week, days };
 }
 
 // Checks an item for that day, or unchecks it if it was already checked.

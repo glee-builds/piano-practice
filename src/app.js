@@ -9,6 +9,8 @@ import {
   replaceItems,
   findDay,
   startDay,
+  missedDates,
+  dropEmptyDays,
   toggleItem,
   finishedDayCount,
 } from "./week.js";
@@ -24,6 +26,7 @@ let state = load();
 let screen = "home";
 let justOpened = null; // what was inside the gift that was just opened
 let justChecked = null; // the item that was just checked, so its box can pop
+let practiceOn = null; // an earlier day being recorded or changed; null means today
 const calmMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const today = () => dateString(new Date());
@@ -42,6 +45,9 @@ function go(name) {
     prizeDraft = null;
     backupNote = "";
     restoreDraft = null;
+    practiceOn = null;
+    // A day that was started but left with nothing checked is put away.
+    if (state.week && dropEmptyDays(state.week) !== state.week) update({ week: dropEmptyDays(state.week) });
   }
   screen = name;
   render();
@@ -330,11 +336,11 @@ function weekGrid(week, activeDate) {
 
 function practiceScreen() {
   const week = state.week;
-  const day = findDay(week, today());
+  const day = findDay(week, practiceOn || today());
   if (!day) return homeScreen();
   const total = week.items.length;
   return [
-    el("h1", {}, "Today's practice"),
+    el("h1", {}, day.date === today() ? "Today's practice" : `Practice on ${longDate(day.date)}`),
     el("section", { class: "card" },
       el("p", { class: "label" }, `${day.done.length} of ${total} checked`),
       weekGrid(week, day.date),
@@ -350,16 +356,17 @@ function practiceScreen() {
 
 function finishedScreen() {
   const week = state.week;
-  const day = findDay(week, today());
+  const day = findDay(week, practiceOn || today());
   const total = week.items.length;
   const count = day ? day.done.length : 0;
+  const when = day && day.date !== today() ? `on ${longDate(day.date)}` : "today";
   const headline = count === total ? "You did everything on your list" : "Practice done";
   return [
     el("section", { class: "card center" },
       el("div", { class: "big-star" }, icon("star")),
       el("h1", {}, headline),
-      el("p", {}, `${count} of ${total} checked today. ${goalMessage(finishedDayCount(week))}`),
-      el("p", { class: "earned" }, icon("star"), ` You earned ${day ? day.stars : 0} ${day && day.stars === 1 ? "star" : "stars"} today.`),
+      el("p", {}, `${count} of ${total} checked ${when}. ${goalMessage(finishedDayCount(week))}`),
+      el("p", { class: "earned" }, icon("star"), ` You earned ${day ? day.stars : 0} ${day && day.stars === 1 ? "star" : "stars"} ${when}.`),
       unopenedGifts(week).length > 0
         ? button(unopenedGifts(week).length === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "main")
         : button("Done", () => go("home"), "main")
@@ -830,12 +837,22 @@ function backupCard() {
 const longDate = (date) => `${dayName(date)}, ${shortDate(date)}`;
 
 // One line for one finished practice: the day, what was checked, the stars.
-function logRow(entry) {
+// `onChange`, when given, adds a button for changing that day's checks.
+function logRow(entry, onChange) {
   return el("li", { class: "log-row" },
     el("span", { class: "log-date" }, entry.date === today() ? "Today" : longDate(entry.date)),
     el("span", { class: "log-checked" }, `${entry.checked} of ${entry.of} checked`),
     el("span", { class: "log-stars", "aria-label": `${entry.stars} ${entry.stars === 1 ? "star" : "stars"}` },
-      icon("star"), ` ${entry.stars}`));
+      icon("star"), ` ${entry.stars}`),
+    onChange && el("button", { class: "btn log-change", type: "button",
+      "aria-label": `Change the checks for ${longDate(entry.date)}`, onClick: onChange }, "Change"));
+}
+
+// Opens the checklist for one day of this week, today or earlier.
+function practiceDay(date) {
+  update({ week: startDay(state.week, date) });
+  practiceOn = date === today() ? null : date;
+  go("practice");
 }
 
 function weekSummaryLine(days, met, holiday) {
@@ -856,18 +873,41 @@ function historyScreen() {
       el("h2", {}, `This week (from ${shortDate(week.startedOn)})`),
       weekSummaryLine(nowLog.length, nowLog.length >= goal(), Boolean(week.holiday)),
       nowLog.length > 0
-        ? el("ul", { class: "log" }, nowLog.map(logRow))
-        : el("p", { class: "label" }, "Each practice you finish shows up here.")),
+        ? el("ul", { class: "log" }, nowLog.map((entry) => logRow(entry, () => practiceDay(entry.date))))
+        : el("p", { class: "label" }, "Each practice you finish shows up here."),
+      missedDates(week, today()).length > 0
+        && button("Add a day you missed", () => go("add-day"))),
     !week && weeks.length === 0 && el("section", { class: "card" },
       el("p", {}, "No practices yet. Each practice you finish shows up here.")),
     weeks.map((past) =>
       el("section", { class: "card" },
         el("h2", {}, `Week of ${shortDate(past.startedOn)}`),
         weekSummaryLine(past.days, past.met, past.holiday),
-        past.log && past.log.length > 0 && el("ul", { class: "log" }, past.log.map(logRow)),
+        past.log && past.log.length > 0 && el("ul", { class: "log" }, past.log.map((entry) => logRow(entry))),
         el("p", { class: "label" }, "The list that week"),
         el("ul", { class: "past-items" }, past.items.map((text) => el("li", {}, text)))
       )),
+  ];
+}
+
+// ---------- Add a day you missed ----------
+
+// For a practice that happened but wasn't checked off on the day. Only days
+// since this week's list was added can be picked, and it is all taps.
+function addDayScreen() {
+  const dates = missedDates(state.week, today());
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const label = (date) => (date === dateString(yesterday) ? `Yesterday (${longDate(date)})` : longDate(date));
+  return [
+    el("h1", {}, "Add a day you missed"),
+    el("section", { class: "card" },
+      dates.length > 0
+        ? el("p", {}, "Tap the day you practiced. Then check off what you did.")
+        : el("p", {}, "Every day this week is already here."),
+      el("div", { class: "day-picks" }, dates.map((date) => button(label(date), () => practiceDay(date)))),
+      el("div", { class: "row" }, button("Cancel", () => go("history")))
+    ),
   ];
 }
 
@@ -882,11 +922,12 @@ const SCREENS = {
   gift: giftScreen,
   album: albumScreen,
   history: historyScreen,
+  "add-day": addDayScreen,
   parent: parentScreen,
 };
 
 function render() {
-  const needsWeek = ["practice", "finished", "new-week", "gift"];
+  const needsWeek = ["practice", "finished", "new-week", "gift", "add-day"];
   if (!state.week && needsWeek.includes(screen)) screen = "home";
   // A screen is a list of parts. Lists inside it are flattened, and parts
   // that are switched off (false or null) are skipped.
