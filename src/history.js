@@ -40,3 +40,36 @@ export function weekStreak(history, currentWeek, goal) {
   }
   return streak;
 }
+
+// Totals across every week so far, for the home screen.
+export function totals(history, currentWeek, goal) {
+  const now = currentWeek ? finishedDayCount(currentWeek) : 0;
+  return {
+    practiceDays: history.reduce((sum, past) => sum + past.days, 0) + now,
+    goalsReached: history.filter((past) => past.met).length + (currentWeek && now >= goal ? 1 : 0),
+  };
+}
+
+// The last few weeks, oldest first, ending with the current week, for the
+// "Your weeks" picture on the home screen. `inStreak` marks the weeks that
+// make up the current streak, using the same rules as weekStreak.
+export function recentWeeks(history, currentWeek, goal, count) {
+  const weeks = history.map((past) => ({
+    startedOn: past.startedOn, days: past.days, met: past.met,
+    holiday: Boolean(past.holiday), current: false, inStreak: false,
+  }));
+  if (currentWeek) {
+    const days = finishedDayCount(currentWeek);
+    weeks.push({
+      startedOn: currentWeek.startedOn, days, met: days >= goal,
+      holiday: Boolean(currentWeek.holiday), current: true, inStreak: false,
+    });
+  }
+  for (let i = weeks.length - 1; i >= 0; i--) {
+    const week = weeks[i];
+    if (week.holiday) continue;
+    if (week.met) week.inStreak = true;
+    else if (!week.current) break;
+  }
+  return weeks.slice(-count);
+}

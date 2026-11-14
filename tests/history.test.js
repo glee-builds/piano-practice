@@ -42,3 +42,25 @@ test("a holiday week is skipped", () => {
 test("a current week marked as a holiday does not add to the streak", () => {
   assert.equal(weekStreak([met], { ...weekWithDays(3), holiday: true }, 3), 1);
 });
+
+import { totals, recentWeeks } from "../src/history.js";
+
+test("totals add up practice days and goals reached, including this week", () => {
+  const history = [{ days: 3, met: true }, { days: 1, met: false }];
+  assert.deepEqual(totals(history, weekWithDays(3), 3), { practiceDays: 7, goalsReached: 2 });
+  assert.deepEqual(totals(history, null, 3), { practiceDays: 4, goalsReached: 1 });
+});
+
+test("recentWeeks ends with the current week and marks the weeks in the streak", () => {
+  const history = [
+    { startedOn: "2026-10-06", days: 1, met: false, holiday: false },
+    { startedOn: "2026-10-13", days: 3, met: true, holiday: false },
+    { startedOn: "2026-10-20", days: 0, met: false, holiday: true },
+    { startedOn: "2026-10-27", days: 4, met: true, holiday: false },
+  ];
+  const weeks = recentWeeks(history, weekWithDays(1), 3, 8);
+  assert.deepEqual(weeks.map((w) => w.inStreak), [false, true, false, true, false]);
+  assert.equal(weeks[4].current, true);
+  assert.equal(weeks.filter((w) => w.inStreak).length, weekStreak(history, weekWithDays(1), 3));
+  assert.equal(recentWeeks(history, weekWithDays(3), 3, 2).length, 2);
+});

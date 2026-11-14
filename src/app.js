@@ -13,7 +13,7 @@ import {
   finishedDayCount,
 } from "./week.js";
 import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
-import { shortDate, summarize, weekStreak } from "./history.js";
+import { shortDate, summarize, weekStreak, totals, recentWeeks } from "./history.js";
 import { goldenCount, prizeProgress } from "./prize.js";
 import { makeBackup, readBackup } from "./backup.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
@@ -23,6 +23,8 @@ const app = document.getElementById("app");
 let state = load();
 let screen = "home";
 let justOpened = null; // what was inside the gift that was just opened
+let justChecked = null; // the item that was just checked, so its box can pop
+const calmMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const today = () => dateString(new Date());
 // How many practice days a week to aim for. Set in the grown-ups area.
@@ -61,6 +63,7 @@ function icon(name) {
     star: "M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 16.9 6.6 19.8l1.1-6.1L3.2 9.4l6.1-.8z",
     plus: "M12 5v14M5 12h14",
     flame: "M12 3c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z",
+    moon: "M16 4a9 9 0 1 0 5 13A7.500 7.500 0 0 1 16 4z",
   };
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
@@ -88,6 +91,7 @@ function homeScreen() {
         el("p", {}, "Add the list from your teacher's note, then check things off each day you practice."),
         button("Add this week's list", () => go("list"), "main")
       ),
+      state.history.length > 0 && weeksCard(),
       prizeCard(),
       holdButton(),
     ];
@@ -97,13 +101,13 @@ function homeScreen() {
   const todayDay = findDay(week, today());
   let action;
   if (!todayDay) {
-    action = button("Start today's practice", startToday, "main");
+    action = button("Start today's practice", startToday, "gold");
   } else if (!todayDay.finished) {
-    action = button("Keep practicing", () => go("practice"), "main");
+    action = button("Keep practicing", () => go("practice"), "gold");
   } else {
-    action = el("div", {},
-      el("p", { class: "done-note" }, icon("check"), " Today's practice is done."),
-      button("Change today's checks", () => go("practice"))
+    action = el("div", { class: "sky-done" },
+      el("p", {}, icon("check"), " Today's practice is done."),
+      button("Change today's checks", () => go("practice"), "ghost")
     );
   }
 
@@ -114,20 +118,14 @@ function homeScreen() {
       el("p", {}, waiting === 1 ? "You have a gift to open." : `You have ${waiting} gifts to open.`),
       button(waiting === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "main")
     ),
-    el("section", { class: "card" },
-      el("p", { class: "label" }, "Practice days"),
-      streakPill(),
-      dayDots(done),
-      el("p", {}, goalMessage(done)),
-      action
-    ),
+    skyHero(done, action),
+    weeksCard(),
     el("section", { class: "card" },
       el("h2", {}, "Your list"),
       weekGrid(week, null),
       el("div", { class: "row" },
         button("Change the list", () => go("list")),
-        button("Start a new week", () => go("new-week")),
-        state.history.length > 0 && button("Past weeks", () => go("past"))
+        button("Start a new week", () => go("new-week"))
       )
     ),
     prizeCard(),
@@ -146,15 +144,6 @@ function topBar(title) {
   );
 }
 
-// Shows how many weeks in a row reached the goal. Hidden when there is
-// no streak, so a missed week is never pointed out.
-function streakPill() {
-  const streak = weekStreak(state.history, state.week, goal());
-  if (streak === 0) return null;
-  return el("p", { class: "streak" }, icon("flame"),
-    streak === 1 ? " 1 week streak" : ` ${streak} week streak`);
-}
-
 function goalMessage(done) {
   const left = goal() - done;
   if (done === 0) return `Your goal is ${goal()} practice days this week.`;
@@ -164,17 +153,108 @@ function goalMessage(done) {
   return `You reached your goal, plus ${-left} extra.`;
 }
 
-function dayDots(done) {
-  const count = Math.max(goal(), done);
-  const dots = [];
-  for (let i = 0; i < count; i++) {
-    dots.push(
-      i < done
-        ? el("span", { class: "dot dot-on", "aria-label": "Practice day done" }, icon("star"))
-        : el("span", { class: "dot", "aria-label": "Practice day to go" }, String(i + 1))
-    );
+// ---------- The home screen pictures ----------
+
+// A five-pointed star as SVG path data, centered on (cx, cy).
+function starPath(cx, cy, outer) {
+  const inner = outer * 0.46;
+  let d = "";
+  for (let i = 0; i < 10; i++) {
+    const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+    const r = i % 2 === 0 ? outer : inner;
+    d += `${i === 0 ? "M" : "L"}${(cx + r * Math.cos(angle)).toFixed(1)} ${(cy + r * Math.sin(angle)).toFixed(1)}`;
   }
-  return el("div", { class: "dots" }, dots);
+  return d + "Z";
+}
+
+// This week as a night sky. Each practice day is a star sitting on a music
+// staff like a note: gold once it's done, an outline while it's still to come.
+function skyHero(done, action) {
+  const slots = Math.max(goal(), done);
+  const heights = [118, 96, 74, 96, 118, 74, 52]; // which staff line each star sits on
+  const width = 600;
+  const gap = slots > 1 ? Math.min(110, 440 / (slots - 1)) : 0;
+  const first = width / 2 - (gap * (slots - 1)) / 2;
+  let art = "";
+  for (const y of [52, 74, 96, 118, 140]) {
+    art += `<line x1="24" x2="${width - 24}" y1="${y}" y2="${y}" class="staff"/>`;
+  }
+  for (const [x, y, r] of [[52, 26, 2], [150, 18, 1.5], [268, 30, 2], [372, 16, 1.5], [470, 28, 2], [556, 20, 1.5], [96, 166, 1.5], [330, 170, 2], [520, 164, 1.5]]) {
+    art += `<circle cx="${x}" cy="${y}" r="${r}" class="speck"/>`;
+  }
+  for (let i = 0; i < slots; i++) {
+    const x = first + gap * i;
+    const y = heights[i % heights.length];
+    if (i < done) {
+      art += `<circle cx="${x}" cy="${y}" r="38" class="halo"/>`
+        + `<line x1="${x + 21}" x2="${x + 21}" y1="${y - 4}" y2="${y - 62}" class="stem"/>`
+        + `<path d="${starPath(x, y, 26)}" class="star-done"/>`;
+    } else {
+      art += `<path d="${starPath(x, y, 22)}" class="star-todo"/>`;
+    }
+  }
+  const sky = el("div", { class: "sky-art", role: "img",
+    "aria-label": `${done} of ${goal()} practice days done this week` });
+  sky.innerHTML = `<svg viewBox="0 0 ${width} 190" aria-hidden="true">${art}</svg>`;
+
+  return el("section", { class: "sky" },
+    sky,
+    el("p", { class: "sky-message" }, goalMessage(done)),
+    action
+  );
+}
+
+// The last few weeks as a row of star stacks: one star per practice day.
+// A week that reached its goal gets a check, and the weeks in the current
+// streak are joined by a gold line.
+function weeksCard() {
+  const weeks = recentWeeks(state.history, state.week, goal(), 8);
+  const streak = weekStreak(state.history, state.week, goal());
+  const sum = totals(state.history, state.week, goal());
+  const stickers = ALL_STICKERS.filter((sticker) => state.owned[sticker.id]).length;
+
+  // The gold line runs from the first week of the streak to the last,
+  // passing through any holiday weeks in between.
+  const inStreak = weeks.map((week, index) => (week.inStreak ? index : -1)).filter((index) => index >= 0);
+  const lineStart = inStreak.length ? inStreak[0] : -1;
+  const lineEnd = inStreak.length ? inStreak[inStreak.length - 1] : -1;
+
+  const columns = weeks.map((week, index) => {
+    const before = index > lineStart && index <= lineEnd;
+    const after = index >= lineStart && index < lineEnd;
+    const stars = [];
+    for (let i = 0; i < Math.min(week.days, 7); i++) stars.push(el("span", { class: "mini-star" }, icon("star")));
+    let mark;
+    if (week.holiday) mark = el("span", { class: "mark mark-holiday" }, icon("moon"));
+    else if (week.met) mark = el("span", { class: "mark mark-met" }, icon("check"));
+    else mark = el("span", { class: "mark" });
+    return el("div", { class: `week-col ${week.met ? "week-met" : ""} ${week.current ? "week-now" : ""}` },
+      el("div", { class: "week-stars" }, stars),
+      el("div", { class: `week-mark ${before ? "link-left" : ""} ${after ? "link-right" : ""}` }, mark),
+      el("span", { class: "week-label" }, week.current ? "Now" : shortDate(week.startedOn))
+    );
+  });
+
+  const described = weeks.map((week) =>
+    `${week.current ? "This week" : `Week of ${shortDate(week.startedOn)}`}: ${week.days} practice ${week.days === 1 ? "day" : "days"}${week.met ? ", goal reached" : ""}${week.holiday ? ", holiday" : ""}`
+  ).join(". ");
+
+  let streakLine;
+  if (streak > 1) streakLine = `${streak} weeks in a row reaching your goal.`;
+  else if (streak === 1) streakLine = "1 week reaching your goal. Keep the line going next week.";
+  else streakLine = "Reach your goal this week to start a streak.";
+
+  return el("section", { class: "card" },
+    el("div", { class: "top" },
+      el("h2", {}, "Your weeks"),
+      state.history.length > 0 && button("Past weeks", () => go("past"))),
+    el("div", { class: "weeks", role: "img", "aria-label": described }, columns),
+    el("p", { class: `streak-line ${streak > 0 ? "streak-on" : ""}` }, streak > 0 && icon("flame"), ` ${streakLine}`),
+    el("div", { class: "tally" },
+      el("div", {}, el("strong", {}, String(sum.practiceDays)), sum.practiceDays === 1 ? " practice day" : " practice days"),
+      el("div", {}, el("strong", {}, String(sum.goalsReached)), sum.goalsReached === 1 ? " goal reached" : " goals reached"),
+      el("div", {}, el("strong", {}, `${stickers}`), ` of ${ALL_STICKERS.length} stickers`))
+  );
 }
 
 function startToday() {
@@ -205,13 +285,15 @@ function weekGrid(week, activeDate) {
       if (day.date === activeDate) {
         row.append(el("td", {},
           el("button", {
-            class: `box box-tap ${checked ? "box-on" : ""}`,
+            class: `box box-tap ${checked ? "box-on" : ""} ${checked && justChecked === item.id ? "box-pop" : ""}`,
             type: "button",
             "aria-pressed": String(checked),
             "aria-label": `${item.text}: ${checked ? "done" : "not done yet"}`,
             onClick: () => {
+              justChecked = checked ? null : item.id;
               update({ week: toggleItem(state.week, day.date, item.id) });
               render();
+              justChecked = null;
             },
           }, checked ? icon("check") : null)
         ));
@@ -283,13 +365,34 @@ function giftBox(kind) {
     golden: ["#f7c948", "#b97f12", "#ffffff"],
   }[kind];
   const box = el("div", { class: `gift-art gift-${kind}` });
-  box.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true">
+  box.innerHTML = `<svg viewBox="0 -14 48 62" aria-hidden="true">
     <rect x="6" y="20" width="36" height="24" rx="3" fill="${colors[0]}" stroke="${colors[1]}" stroke-width="2"/>
-    <rect x="3" y="12" width="42" height="10" rx="3" fill="${colors[0]}" stroke="${colors[1]}" stroke-width="2"/>
-    <rect x="21" y="12" width="6" height="32" fill="${colors[2]}"/>
-    <path d="M24 12c-4-9-13-7-10-2 2 3 6 2 10 2zM24 12c4-9 13-7 10-2-2 3-6 2-10 2z" fill="${colors[2]}" stroke="${colors[1]}" stroke-width="1.5"/>
+    <rect x="21" y="20" width="6" height="24" fill="${colors[2]}"/>
+    <g class="lid">
+      <rect x="3" y="12" width="42" height="10" rx="3" fill="${colors[0]}" stroke="${colors[1]}" stroke-width="2"/>
+      <rect x="21" y="12" width="6" height="10" fill="${colors[2]}"/>
+      <path d="M24 12c-4-9-13-7-10-2 2 3 6 2 10 2zM24 12c4-9 13-7 10-2-2 3-6 2-10 2z" fill="${colors[2]}" stroke="${colors[1]}" stroke-width="1.5"/>
+    </g>
   </svg>`;
   return box;
+}
+
+// A burst of paper bits for the moment a sticker appears. It is only for
+// show, so screen readers skip it, and it is left out for people who ask
+// their device for less motion.
+function confetti() {
+  if (calmMotion()) return null;
+  const colors = ["#ffc93c", "#ff7a6b", "#5b4fc4", "#3fc1c9", "#7ed492"];
+  const bits = [];
+  for (let i = 0; i < 26; i++) {
+    const bit = el("span", { class: "bit" });
+    bit.style.left = `${4 + ((i * 37) % 92)}%`;
+    bit.style.background = colors[i % colors.length];
+    bit.style.animationDelay = `${(i % 7) * 0.07}s`;
+    bit.style.setProperty("--turn", `${(i % 2 ? 1 : -1) * (200 + i * 23)}deg`);
+    bits.push(bit);
+  }
+  return el("div", { class: "confetti", "aria-hidden": "true" }, bits);
 }
 
 function stickerArt(sticker, shiny) {
@@ -314,7 +417,8 @@ function giftScreen() {
         next)];
     }
     const set = SETS.find((s) => s.stickers.includes(inside.sticker));
-    return [el("section", { class: "card center" },
+    return [el("section", { class: "card center reveal-card" },
+      confetti(),
       el("p", { class: "label" }, inside.shiny ? "New shiny sticker" : "New sticker"),
       el("div", { class: "reveal" }, stickerArt(inside.sticker, inside.shiny)),
       el("h1", {}, inside.sticker.name),
@@ -328,12 +432,17 @@ function giftScreen() {
     el("h1", {}, GIFT_NAMES[gift.kind]),
     el("button", {
       class: "gift-button", type: "button", "aria-label": "Open the gift",
-      onClick: () => {
-        const result = openGift(state.week, state.owned, state.stars,
-          gift.date, gift.index, ALL_STICKERS, Math.random);
-        justOpened = result.inside;
-        update({ week: result.week, owned: result.owned, stars: result.stars });
-        render();
+      onClick: (event) => {
+        const giftButton = event.currentTarget;
+        if (giftButton.classList.contains("opening")) return;
+        giftButton.classList.add("opening"); // the lid lifts off
+        setTimeout(() => {
+          const result = openGift(state.week, state.owned, state.stars,
+            gift.date, gift.index, ALL_STICKERS, Math.random);
+          justOpened = result.inside;
+          update({ week: result.week, owned: result.owned, stars: result.stars });
+          render();
+        }, calmMotion() ? 0 : 700);
       },
     }, giftBox(gift.kind)),
     el("p", {}, "Tap the gift to open it."))];
