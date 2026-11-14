@@ -229,6 +229,22 @@ textarea, .text-input {
 .slot { text-align: center; }
 .slot-name { display: block; font-size: 14px; margin-top: 8px; min-height: 21px; }
 
+/* The sticker scene: a picture with stickers placed on it. */
+.scene { position: relative; aspect-ratio: 4 / 3; border-radius: 26px; overflow: hidden; margin: 14px 0; box-shadow: 0 10px 24px rgba(35, 29, 92, 0.250); touch-action: none; }
+.scene-back { position: absolute; inset: 0; width: 100%; height: 100%; }
+.placed { position: absolute; transform: translate(-50%, -50%); aspect-ratio: 1; padding: 0; border: none; background: none; border-radius: 50%; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.placed .sticker { width: 100%; height: 100%; pointer-events: none; }
+.placed-on { outline: 4px dashed #ffffff; outline-offset: 2px; }
+.scene-tools { margin-top: 0; }
+.scene-tools .btn { flex: 1 1 110px; }
+.btn-off { opacity: 0.450; }
+.scene-hint { min-height: 54px; display: flex; align-items: center; margin: 0; }
+.tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.tray-pick { border: none; background: #efedfb; border-radius: 18px; padding: 6px; cursor: pointer; min-height: 76px; }
+.tray-pick .sticker { width: 100%; height: auto; aspect-ratio: 1; }
+.tray-pick:active { transform: scale(0.94); }
+.tray-pick:focus-visible, .placed:focus-visible { outline: 4px solid var(--main); outline-offset: 2px; }
+
 /* Practice history: one line per finished practice. */
 .log { list-style: none; margin: 0 0 14px; padding: 0; }
 .log-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; padding: 12px 0; border-top: 2px solid var(--page); }
