@@ -14,6 +14,7 @@ import {
 } from "./week.js";
 import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
 import { shortDate, summarize, weekStreak } from "./history.js";
+import { goldenCount, prizeProgress } from "./prize.js";
 import { savePhoto, loadPhoto, deletePhoto, shrinkPhoto } from "./photos.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
 import { load, save } from "./storage.js";
@@ -26,6 +27,8 @@ let draftPhotoId = undefined; // the photo chosen on the list screen, before sav
 let noteView = { id: null, back: "home" }; // which note photo is being looked at
 
 const today = () => dateString(new Date());
+// How many practice days a week to aim for. Set in the grown-ups area.
+const goal = () => state.goal || DEFAULT_GOAL;
 
 function update(changes) {
   state = { ...state, ...changes };
@@ -88,6 +91,8 @@ function homeScreen() {
         el("p", {}, "Add the list from your teacher's note, then check things off each day you practice."),
         button("Add this week's list", () => go("list"), "main")
       ),
+      prizeCard(),
+      holdButton(),
     ];
   }
 
@@ -139,6 +144,8 @@ function homeScreen() {
         state.history.length > 0 && button("Past weeks", () => go("past"))
       )
     ),
+    prizeCard(),
+    holdButton(),
   ];
 }
 
@@ -156,23 +163,23 @@ function topBar(title) {
 // Shows how many weeks in a row reached the goal. Hidden when there is
 // no streak, so a missed week is never pointed out.
 function streakPill() {
-  const streak = weekStreak(state.history, state.week, DEFAULT_GOAL);
+  const streak = weekStreak(state.history, state.week, goal());
   if (streak === 0) return null;
   return el("p", { class: "streak" }, icon("flame"),
     streak === 1 ? " 1 week streak" : ` ${streak} week streak`);
 }
 
 function goalMessage(done) {
-  const left = DEFAULT_GOAL - done;
-  if (done === 0) return `Your goal is ${DEFAULT_GOAL} practice days this week.`;
-  if (left > 1) return `${done} of ${DEFAULT_GOAL} done. ${left} more to reach your goal.`;
-  if (left === 1) return `${done} of ${DEFAULT_GOAL} done. One more to reach your goal.`;
+  const left = goal() - done;
+  if (done === 0) return `Your goal is ${goal()} practice days this week.`;
+  if (left > 1) return `${done} of ${goal()} done. ${left} more to reach your goal.`;
+  if (left === 1) return `${done} of ${goal()} done. One more to reach your goal.`;
   if (left === 0) return "You reached your goal this week.";
   return `You reached your goal, plus ${-left} extra.`;
 }
 
 function dayDots(done) {
-  const count = Math.max(DEFAULT_GOAL, done);
+  const count = Math.max(goal(), done);
   const dots = [];
   for (let i = 0; i < count; i++) {
     dots.push(
@@ -253,7 +260,7 @@ function practiceScreen() {
         button("Back", () => go("home")),
         week.photoId && button("See your teacher's note", () => showNote(week.photoId, "practice")),
         button("Finish practice", () => {
-          update(awardFinish(state.week, day.date, state.stars, DEFAULT_GOAL));
+          update(awardFinish(state.week, day.date, state.stars, goal()));
           go("finished");
         }, "main")
       )
@@ -510,7 +517,7 @@ function newWeekScreen() {
         button("Start a new week", () => {
           update({
             lastItems: state.week.items.map((item) => item.text),
-            history: [...state.history, summarize(state.week, DEFAULT_GOAL)],
+            history: [...state.history, summarize(state.week, goal())],
             week: null,
           });
           go("list");
@@ -544,6 +551,131 @@ function noteScreen() {
       el("h1", {}, "Your teacher's note"),
       button("Back", () => go(noteView.back))),
     el("div", { class: "note-full" }, notePhoto(noteView.id)),
+  ];
+}
+
+// ---------- Prize and the grown-ups area ----------
+
+function prizeCard() {
+  if (!state.prize) return null;
+  const progress = prizeProgress(state.prize, goldenCount(state.history, state.week));
+  const dots = [];
+  for (let i = 0; i < progress.need; i++) {
+    dots.push(el("span", { class: `gold-dot ${i < progress.have ? "gold-dot-on" : ""}` },
+      i < progress.have ? icon("star") : null));
+  }
+  return el("section", { class: `card ${progress.earned ? "gift-card" : ""}` },
+    el("h2", {}, progress.earned ? "You earned your prize" : "Your prize"),
+    el("p", { class: "prize-text" }, state.prize.text),
+    el("div", { class: "dots", role: "img",
+      "aria-label": `${progress.have} of ${progress.need} golden gifts` }, dots),
+    el("p", { class: "label" }, progress.earned
+      ? "Show this to a grown-up."
+      : `${progress.have} of ${progress.need} golden gifts. You get one each week you reach your goal.`)
+  );
+}
+
+// The way into the grown-ups area: press and hold for three seconds.
+function holdButton() {
+  const HOLD_MS = 3000;
+  let timer = null;
+  const btn = el("button", { class: "hold", type: "button" },
+    el("span", { class: "hold-fill" }), el("span", { class: "hold-text" }, "Grown-ups: press and hold"));
+  const start = () => {
+    if (timer) return;
+    btn.classList.add("holding");
+    timer = setTimeout(() => { timer = null; go("parent"); }, HOLD_MS);
+  };
+  const stop = () => {
+    clearTimeout(timer);
+    timer = null;
+    btn.classList.remove("holding");
+  };
+  btn.addEventListener("pointerdown", start);
+  for (const name of ["pointerup", "pointerleave", "pointercancel", "blur"]) btn.addEventListener(name, stop);
+  btn.addEventListener("keydown", (event) => { if (event.key === " " || event.key === "Enter") start(); });
+  btn.addEventListener("keyup", stop);
+  btn.addEventListener("contextmenu", (event) => event.preventDefault());
+  return el("div", { class: "hold-wrap" }, btn);
+}
+
+function stepper(label, value, min, max, onChange) {
+  return el("div", { class: "stepper" },
+    el("button", { class: "btn step-btn", type: "button", "aria-label": `${label}: one fewer`,
+      onClick: () => { if (value > min) onChange(value - 1); } }, "−"),
+    el("span", { class: "step-value", "aria-live": "polite" }, String(value)),
+    el("button", { class: "btn step-btn", type: "button", "aria-label": `${label}: one more`,
+      onClick: () => { if (value < max) onChange(value + 1); } }, "+")
+  );
+}
+
+function toggle(label, on, onChange) {
+  return el("button", { class: `btn toggle ${on ? "toggle-on" : ""}`, type: "button",
+    "aria-pressed": String(on), onClick: () => onChange(!on) },
+    on ? icon("check") : null, on ? ` ${label}: on` : `${label}: off`);
+}
+
+let prizeDraft = null; // the prize being typed in the grown-ups area
+
+function parentScreen() {
+  const week = state.week;
+  const count = goldenCount(state.history, week);
+  if (!prizeDraft) prizeDraft = { text: state.prize ? state.prize.text : "", need: state.prize ? state.prize.need : 5 };
+
+  const prizeInput = el("input", { type: "text", class: "text-input", maxlength: "60",
+    placeholder: "Movie night", "aria-label": "Prize" });
+  prizeInput.value = prizeDraft.text;
+  prizeInput.addEventListener("input", () => { prizeDraft.text = prizeInput.value; prizeError.textContent = ""; });
+  const prizeError = el("p", { class: "error", role: "alert" });
+
+  const recent = state.history.map((past, index) => ({ past, index })).reverse().slice(0, 6);
+
+  return [
+    el("div", { class: "top" },
+      el("h1", {}, "Grown-ups"),
+      button("Done", () => { prizeDraft = null; go("home"); }, "main")),
+
+    el("section", { class: "card" },
+      el("h2", {}, "Weekly goal"),
+      el("p", {}, "Practice days to aim for each week."),
+      stepper("Weekly goal", goal(), 1, 7, (value) => { update({ goal: value }); render(); })
+    ),
+
+    el("section", { class: "card" },
+      el("h2", {}, "Holiday weeks"),
+      el("p", {}, "A holiday week is skipped by the week streak: it doesn't add to it or end it."),
+      week && el("div", { class: "holiday-row" },
+        el("span", {}, `This week (from ${shortDate(week.startedOn)})`),
+        toggle("Holiday", Boolean(week.holiday), (on) => { update({ week: { ...state.week, holiday: on } }); render(); })),
+      recent.map(({ past, index }) => el("div", { class: "holiday-row" },
+        el("span", {}, `Week of ${shortDate(past.startedOn)}: ${past.days} practice ${past.days === 1 ? "day" : "days"}`),
+        toggle("Holiday", past.holiday, (on) => {
+          update({ history: state.history.map((entry, i) => (i === index ? { ...entry, holiday: on } : entry)) });
+          render();
+        }))),
+      !week && recent.length === 0 && el("p", { class: "label" }, "No weeks yet.")
+    ),
+
+    el("section", { class: "card" },
+      el("h2", {}, "Prize"),
+      el("p", {}, "A real-world treat earned with golden gifts. One golden gift is given each week the goal is reached."),
+      prizeInput,
+      el("p", { class: "label" }, "Golden gifts needed"),
+      stepper("Golden gifts needed", prizeDraft.need, 1, 20, (value) => { prizeDraft.need = value; render(); }),
+      prizeError,
+      el("div", { class: "row" },
+        state.prize && button(
+          prizeProgress(state.prize, count).earned ? "Prize given: clear it" : "Remove the prize",
+          () => { update({ prize: null }); prizeDraft = null; render(); }),
+        button(state.prize ? "Save the prize" : "Set the prize", () => {
+          const text = prizeDraft.text.trim();
+          if (!text) { prizeError.textContent = "Type what the prize is."; return; }
+          // Keep progress when only editing; start from now for a new prize.
+          const base = state.prize ? state.prize.base : count;
+          update({ prize: { text, need: prizeDraft.need, base } });
+          render();
+        }, "main"))
+    ),
   ];
 }
 
@@ -582,6 +714,7 @@ const SCREENS = {
   album: albumScreen,
   past: pastScreen,
   note: noteScreen,
+  parent: parentScreen,
 };
 
 function render() {

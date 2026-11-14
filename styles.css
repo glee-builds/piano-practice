@@ -156,3 +156,22 @@ textarea:focus, .btn:focus-visible, .box-tap:focus-visible, .chip:focus-visible 
 .file-input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .file-label { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: 1 1 200px; }
 .file-label:focus-within { outline: 3px solid var(--main); outline-offset: 2px; }
+
+/* Prize card. */
+.prize-text { font-size: 22px; font-weight: 700; }
+.gold-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px dashed var(--line); display: inline-flex; align-items: center; justify-content: center; }
+.gold-dot-on { border: 2px solid var(--star); background: var(--star-soft); color: var(--star); }
+
+/* Grown-ups area. */
+.hold-wrap { text-align: center; margin-top: 28px; }
+.hold { position: relative; overflow: hidden; min-height: 48px; padding: 8px 20px; border-radius: 24px; border: 1px solid var(--line); background: none; color: var(--ink-soft); font: inherit; font-size: 15px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.hold-fill { position: absolute; inset: 0; width: 0; background: var(--main-soft); }
+.hold.holding .hold-fill { width: 100%; transition: width 3s linear; }
+.hold-text { position: relative; }
+.stepper { display: flex; align-items: center; gap: 16px; }
+.step-btn { width: 56px; font-size: 26px; padding: 0; }
+.step-value { font-size: 26px; font-weight: 700; min-width: 40px; text-align: center; }
+.holiday-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.toggle-on { background: var(--main-soft); border-color: var(--main); color: var(--main); }
+.text-input { width: 100%; min-height: 52px; padding: 10px 14px; border-radius: 12px; border: 2px solid var(--line); font: inherit; color: var(--ink); background: var(--card); margin-bottom: 14px; }
+.text-input:focus, .hold:focus-visible { outline: 3px solid var(--main); outline-offset: 2px; }

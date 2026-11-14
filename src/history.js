@@ -20,7 +20,7 @@ export function summarize(week, goal) {
     days,
     goal,
     met: days >= goal,
-    holiday: false,
+    holiday: Boolean(week.holiday),
     items: week.items.map((item) => item.text),
     photoId: week.photoId || null,
   };
@@ -31,7 +31,8 @@ export function summarize(week, goal) {
 // streak while it is still in progress. A holiday week is skipped: it
 // neither adds to the streak nor ends it.
 export function weekStreak(history, currentWeek, goal) {
-  let streak = currentWeek && finishedDayCount(currentWeek) >= goal ? 1 : 0;
+  const counts = currentWeek && !currentWeek.holiday && finishedDayCount(currentWeek) >= goal;
+  let streak = counts ? 1 : 0;
   for (let i = history.length - 1; i >= 0; i--) {
     const past = history[i];
     if (past.holiday) continue;
