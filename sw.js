@@ -24,6 +24,7 @@ const FILES = [
   "styles.css",
   "manifest.webmanifest",
   "src/app.js",
+  "src/backup.js",
   "src/history.js",
   "src/photos.js",
   "src/prize.js",
