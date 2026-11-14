@@ -12,8 +12,8 @@
 // When you add a file the app needs, add it to FILES.
 // tests/offline.test.js fails if one is missing.
 //
-// This only handles the app's own files. Practice data and photos are
-// stored separately on the device and never pass through here.
+// This only handles the app's own files. Practice data is stored
+// separately on the device and never passes through here.
 
 const CACHE = "practice-stars-v1";
 
@@ -26,7 +26,6 @@ const FILES = [
   "src/app.js",
   "src/backup.js",
   "src/history.js",
-  "src/photos.js",
   "src/prize.js",
   "src/rewards.js",
   "src/storage.js",
