@@ -38,3 +38,7 @@ test("the current week adds one once its goal is reached, and never breaks the s
 test("a holiday week is skipped", () => {
   assert.equal(weekStreak([met, holiday, met], null, 3), 2);
 });
+
+test("a current week marked as a holiday does not add to the streak", () => {
+  assert.equal(weekStreak([met], { ...weekWithDays(3), holiday: true }, 3), 1);
+});

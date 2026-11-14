@@ -26,6 +26,7 @@ const FILES = [
   "src/app.js",
   "src/history.js",
   "src/photos.js",
+  "src/prize.js",
   "src/rewards.js",
   "src/storage.js",
   "src/week.js",
