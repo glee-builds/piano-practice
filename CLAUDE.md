@@ -46,8 +46,8 @@ data/stickers.js   the sticker album: sets of ten original drawings. Add a
 sw.js              service worker: saves the app's files so it opens offline.
                    Add every new file to its FILES list (a test checks this)
 manifest.webmanifest  name, icon, and colors for the home-screen app
-assets/            app icons. Change the drawing in make-icons.py and run it
-                   to rewrite the three PNG files
+assets/            app icons. icon.svg is the drawing; the three PNG files are
+                   copies of it at fixed sizes (see README)
 tests/             node --test files
 docs/decisions.md  decision history
 ```

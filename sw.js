@@ -32,6 +32,7 @@ const FILES = [
   "src/week.js",
   "data/stickers.js",
   "assets/apple-touch-icon.png",
+  "assets/icon.svg",
   "assets/icon-192.png",
   "assets/icon-512.png",
 ];
