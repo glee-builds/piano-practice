@@ -46,6 +46,7 @@ p { margin: 0 0 14px; }
   border-radius: 24px;
   padding: 22px;
   margin: 18px 0;
+  box-shadow: 0 2px 0 #d9d6f0, 0 10px 22px rgba(74, 63, 192, 0.060);
 }
 .center { text-align: center; }
 .label { color: var(--ink-soft); font-size: 16px; margin-bottom: 8px; }
@@ -70,6 +71,10 @@ p { margin: 0 0 14px; }
 .btn-main { background: var(--main); border-color: var(--main-deep); color: #ffffff; }
 .btn-gold { background: var(--star); border-color: var(--star-deep); color: var(--sky-deep); font-size: 21px; min-height: 60px; padding: 10px 32px; }
 .btn-ghost { background: transparent; border-color: rgba(255, 255, 255, 0.45); color: #ffffff; }
+/* Quiet buttons: for things that are rarely needed, so they don't compete
+   with the main button. Still at least 48px tall. */
+.btn-quiet { min-height: 48px; padding: 6px 16px; border-color: transparent; border-bottom-width: 2px; background: var(--page); color: var(--ink-soft); font-size: 0.900em; }
+.quiet-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
 .row .btn { flex: 1 1 200px; }
 
@@ -80,6 +85,17 @@ p { margin: 0 0 14px; }
 .top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .top h1, .top h2 { margin: 0; }
 .top-right { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+/* The tiles on the home screen that lead to the other pages. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 18px 0; }
+.tile { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 12px 16px; border-radius: 22px; border: none; background: var(--card); color: var(--ink); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 4px 0 #d0ccec, 0 10px 22px rgba(74, 63, 192, 0.060); }
+.tile:active { transform: translateY(2px); box-shadow: 0 2px 0 #d0ccec; }
+.tile-icon { flex: none; width: 50px; height: 50px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #ffffff; background: linear-gradient(160deg, #7a6cf0, var(--main)); }
+.tile-album .tile-icon { background: linear-gradient(160deg, #ffd65c, #f5a31c); color: #4a2c00; }
+.tile-scene .tile-icon { background: linear-gradient(160deg, #58d6c4, #1f9b8c); }
+.tile-text { display: flex; flex-direction: column; line-height: 1.250; }
+.tile-text strong { font-size: 1.050em; font-weight: 800; }
+.tile-text span { font-size: 15px; color: var(--ink-soft); }
 
 /* The Home button at the top of every screen except home. */
 .home-bar { margin-bottom: 14px; }
@@ -115,6 +131,8 @@ p { margin: 0 0 14px; }
 .star-sleep { fill: none; stroke: rgba(255, 255, 255, 0.600); stroke-width: 1.800; stroke-linecap: round; }
 .sky-message { font-size: 23px; font-weight: 800; margin: 6px 0 18px; }
 .sky-done p { font-weight: 700; color: var(--star); margin-bottom: 12px; }
+.sky-done { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.sky-done p { margin: 0; }
 
 /* "Your weeks": a stack of little stars per week, joined by the streak line. */
 .weeks { display: flex; align-items: flex-end; gap: 4px; margin: 14px 0 10px; }
@@ -241,7 +259,7 @@ textarea, .text-input {
 
 /* A clear outline on whatever the keyboard is focused on. */
 textarea:focus, .text-input:focus, .btn:focus-visible, .box-tap:focus-visible, .chip:focus-visible,
-.gift-button:focus-visible, .hold:focus-visible, .file-label:focus-within { outline: 4px solid var(--main); outline-offset: 2px; }
+.gift-button:focus-visible, .hold:focus-visible, .tile:focus-visible, .file-label:focus-within { outline: 4px solid var(--main); outline-offset: 2px; }
 .sky .btn:focus-visible { outline-color: #ffffff; }
 
 @keyframes wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-5deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }
