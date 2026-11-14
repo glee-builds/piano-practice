@@ -14,6 +14,7 @@ import {
 } from "./week.js";
 import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
 import { shortDate, summarize, weekStreak } from "./history.js";
+import { savePhoto, loadPhoto, deletePhoto, shrinkPhoto } from "./photos.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
 import { load, save } from "./storage.js";
 
@@ -21,6 +22,8 @@ const app = document.getElementById("app");
 let state = load();
 let screen = "home";
 let justOpened = null; // what was inside the gift that was just opened
+let draftPhotoId = undefined; // the photo chosen on the list screen, before saving
+let noteView = { id: null, back: "home" }; // which note photo is being looked at
 
 const today = () => dateString(new Date());
 
@@ -30,6 +33,7 @@ function update(changes) {
 }
 
 function go(name) {
+  if (name === "list") draftPhotoId = state.week ? state.week.photoId || null : null;
   screen = name;
   render();
   window.scrollTo(0, 0);
@@ -114,6 +118,17 @@ function homeScreen() {
       dayDots(done),
       el("p", {}, goalMessage(done)),
       action
+    ),
+    el("section", { class: "card" },
+      el("h2", {}, "Your teacher's note"),
+      week.photoId
+        ? el("button", {
+            class: "note-thumb", type: "button", "aria-label": "Look at the photo of your teacher's note",
+            onClick: () => showNote(week.photoId, "home"),
+          }, notePhoto(week.photoId))
+        : el("div", {},
+            el("p", {}, "Add a photo of the note so you can look at it while you practice."),
+            button("Add a photo", () => go("list")))
     ),
     el("section", { class: "card" },
       el("h2", {}, "Your list"),
@@ -236,6 +251,7 @@ function practiceScreen() {
       weekGrid(week, day.date),
       el("div", { class: "row" },
         button("Back", () => go("home")),
+        week.photoId && button("See your teacher's note", () => showNote(week.photoId, "practice")),
         button("Finish practice", () => {
           update(awardFinish(state.week, day.date, state.stars, DEFAULT_GOAL));
           go("finished");
@@ -401,21 +417,61 @@ function listScreen() {
       )
     : null;
 
+  const savedPhotoId = editing ? state.week.photoId || null : null;
+  const photoSlot = el("div", { class: "photo-slot" });
+  const drawPhotoSlot = () => {
+    const input = el("input", { type: "file", accept: "image/*", capture: "environment", class: "file-input" });
+    input.addEventListener("change", async () => {
+      const file = input.files[0];
+      if (!file) return;
+      try {
+        const id = `note-${Date.now()}`;
+        await savePhoto(id, await shrinkPhoto(file));
+        if (draftPhotoId && draftPhotoId !== savedPhotoId) deletePhoto(draftPhotoId);
+        draftPhotoId = id;
+        error.textContent = "";
+      } catch {
+        error.textContent = "That photo couldn't be saved. Try taking it again.";
+      }
+      drawPhotoSlot();
+    });
+    const pick = el("label", { class: "btn file-label" }, input,
+      draftPhotoId ? "Take a new photo" : "Take a photo of the note");
+    photoSlot.replaceChildren(...[
+      draftPhotoId && notePhoto(draftPhotoId),
+      el("div", { class: "row" }, pick,
+        draftPhotoId && button("Remove the photo", () => {
+          if (draftPhotoId !== savedPhotoId) deletePhoto(draftPhotoId);
+          draftPhotoId = null;
+          drawPhotoSlot();
+        })),
+    ].filter(Boolean));
+  };
+  drawPhotoSlot();
+
+  const cancel = () => {
+    if (draftPhotoId && draftPhotoId !== savedPhotoId) deletePhoto(draftPhotoId);
+    go("home");
+  };
+
   const saveList = () => {
     const texts = parseList(box.value);
     if (texts.length === 0) {
       error.textContent = "Add at least one thing to practice.";
       return;
     }
-    update({
-      week: editing ? replaceItems(state.week, texts) : newWeek(texts, today()),
-    });
+    if (savedPhotoId && savedPhotoId !== draftPhotoId) deletePhoto(savedPhotoId);
+    const week = editing ? replaceItems(state.week, texts) : newWeek(texts, today());
+    update({ week: { ...week, photoId: draftPhotoId || null } });
     go("home");
   };
 
   return [
     el("h1", {}, editing ? "Change the list" : "This week's list"),
     el("section", { class: "card" },
+      el("h2", {}, "1. Your teacher's note"),
+      photoSlot,
+      el("h2", { class: "step" }, "2. What to practice"),
       el("p", { id: "list-help" },
         "Put one thing on each line. You can type, paste a list, or tap the microphone on the keyboard and read your teacher's note out loud. Say \"new line\" between things."),
       box,
@@ -424,7 +480,7 @@ function listScreen() {
       preview,
       error,
       el("div", { class: "row" },
-        button("Cancel", () => go("home")),
+        button("Cancel", cancel),
         button(editing ? "Save the list" : "Make my checklist", saveList, "main")
       )
     ),
@@ -464,6 +520,33 @@ function newWeekScreen() {
   ];
 }
 
+// ---------- The teacher's note photo ----------
+
+// An <img> that fills itself in once the photo has been read from storage.
+function notePhoto(id) {
+  const img = el("img", { class: "note-photo", alt: "Photo of your teacher's note" });
+  loadPhoto(id).then((blob) => {
+    if (!blob) return;
+    img.src = URL.createObjectURL(blob);
+    img.addEventListener("load", () => URL.revokeObjectURL(img.src), { once: true });
+  }).catch(() => {});
+  return img;
+}
+
+function showNote(id, back) {
+  noteView = { id, back };
+  go("note");
+}
+
+function noteScreen() {
+  return [
+    el("div", { class: "top" },
+      el("h1", {}, "Your teacher's note"),
+      button("Back", () => go(noteView.back))),
+    el("div", { class: "note-full" }, notePhoto(noteView.id)),
+  ];
+}
+
 // ---------- Past weeks ----------
 
 function pastScreen() {
@@ -480,7 +563,9 @@ function pastScreen() {
           ` ${past.days} practice ${past.days === 1 ? "day" : "days"}`,
           past.met ? ". Goal reached." : ".",
           past.holiday ? " Holiday week." : ""),
-        el("ul", { class: "past-items" }, past.items.map((text) => el("li", {}, text)))
+        el("ul", { class: "past-items" }, past.items.map((text) => el("li", {}, text))),
+        past.photoId && el("div", { class: "row" },
+          button("See the teacher's note", () => showNote(past.photoId, "past")))
       )),
   ];
 }
@@ -496,6 +581,7 @@ const SCREENS = {
   gift: giftScreen,
   album: albumScreen,
   past: pastScreen,
+  note: noteScreen,
 };
 
 function render() {
