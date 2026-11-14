@@ -39,6 +39,10 @@ src/photos.js      keeps note photos in IndexedDB on the device
 src/storage.js     saves and loads from localStorage
 src/app.js         draws the screens and handles taps
 data/stickers.js   the sticker album: four sets of ten original drawings
+sw.js              service worker: saves the app's files so it opens offline.
+                   Add every new file to its FILES list (a test checks this)
+manifest.webmanifest  name, icon, and colors for the home-screen app
+assets/            app icons
 tests/             node --test files
 docs/decisions.md  decision history
 ```

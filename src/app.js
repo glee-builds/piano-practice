@@ -593,3 +593,10 @@ function render() {
 }
 
 render();
+
+// Offline: sw.js saves the app's files so it opens without internet.
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch((error) => console.warn("Offline mode is off:", error));
+}
+// Ask the device to keep this app's saved data even when storage runs low.
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
