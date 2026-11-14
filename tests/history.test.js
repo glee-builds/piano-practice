@@ -20,7 +20,7 @@ test("shortDate", () => {
 
 test("summarize records whether the goal was reached", () => {
   assert.deepEqual(summarize(weekWithDays(2), 3), {
-    startedOn: "2026-11-10", days: 2, goal: 3, met: false, holiday: false, items: ["Scale"], photoId: null,
+    startedOn: "2026-11-10", days: 2, goal: 3, met: false, holiday: false, items: ["Scale"],
   });
   assert.equal(summarize(weekWithDays(3), 3).met, true);
 });

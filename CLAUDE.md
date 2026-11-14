@@ -13,7 +13,7 @@ Shared rules for all coding projects are in `../CLAUDE.md`, and they apply here.
 - **Code:** plain HTML, CSS, and JavaScript ES modules. No framework, no build step.
 - **Repo:** public.
 - **Hosting:** GitHub Pages from `main`.
-- **Data:** weeks, checkmarks, stars, and stickers in `localStorage`. Note photos in IndexedDB (Phase 3). Nothing leaves the device.
+- **Data:** weeks, checkmarks, stars, and stickers in `localStorage`. Nothing leaves the device.
 - **Week:** runs from one lesson to the next. A week starts when a new list is entered.
 - **Testing:** Node's built-in test runner (`node --test`). Logic lives in modules that don't touch the page, so it can be tested.
 
@@ -35,7 +35,6 @@ styles.css         all styling
 src/week.js        the week's data and rules (no page code, so it is testable)
 src/rewards.js     the rules for stars, gifts, and stickers (testable)
 src/history.js     past weeks and the week streak (testable)
-src/photos.js      keeps note photos in IndexedDB on the device
 src/prize.js       the grown-up-set prize and its progress (testable)
 src/backup.js      builds and checks the backup file (testable)
 src/storage.js     saves and loads from localStorage
