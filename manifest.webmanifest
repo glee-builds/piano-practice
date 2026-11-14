@@ -1,6 +1,6 @@
 {
-  "name": "Practice Stars",
-  "short_name": "Practice",
+  "name": "Starry Keys",
+  "short_name": "Starry Keys",
   "description": "A piano practice tracker with a weekly checklist, stars, and stickers.",
   "start_url": "./",
   "scope": "./",
