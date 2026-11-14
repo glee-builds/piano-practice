@@ -107,3 +107,33 @@ textarea:focus, .btn:focus-visible, .box-tap:focus-visible, .chip:focus-visible 
   border: 2px solid var(--main); background: var(--main-soft); color: var(--main);
   font: inherit; font-weight: 600; text-align: left;
 }
+
+/* Top bar: title on the left, stars and album on the right. */
+.top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.top h1 { margin: 0; }
+.top-right { display: flex; align-items: center; gap: 12px; }
+.star-count { font-weight: 700; font-size: 20px; color: var(--star-ink); background: var(--star-soft); border: 2px solid var(--star); border-radius: 26px; padding: 8px 16px; min-height: 52px; display: inline-flex; align-items: center; }
+.star-count .icon { color: var(--star); margin-right: 4px; }
+.earned { font-weight: 600; }
+.earned .icon { color: var(--star); }
+.gift-card { border: 2px solid var(--star); background: var(--star-soft); }
+
+/* Gifts and stickers. */
+.gift-button { border: none; background: none; padding: 12px; cursor: pointer; border-radius: 24px; }
+.gift-button:focus-visible { outline: 3px solid var(--main); }
+.gift-art svg { width: 200px; height: 200px; display: block; }
+.gift-button .gift-art { animation: wiggle 1.6s ease-in-out infinite; }
+.sticker { width: 88px; height: 88px; border-radius: 50%; background: #ffffff; border: 3px solid var(--line); display: flex; align-items: center; justify-content: center; margin: 0 auto; }
+.sticker svg { width: 64%; height: 64%; }
+.sticker-shiny { border-color: var(--star); background: var(--star-soft); box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--star); }
+.sticker-missing { border-style: dashed; color: var(--ink-soft); font-size: 30px; font-weight: 700; background: none; }
+.reveal { margin: 12px 0 20px; }
+.reveal .sticker { width: 180px; height: 180px; animation: pop 0.5s ease-out; }
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 18px 10px; padding-top: 8px; }
+.slot { text-align: center; }
+.slot-name { display: block; font-size: 14px; margin-top: 8px; min-height: 21px; }
+
+@keyframes wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-5deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }
+@keyframes pop { 0% { transform: scale(0.2); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
+/* People who ask their device for less motion get none. */
+@media (prefers-reduced-motion: reduce) { .gift-button .gift-art, .reveal .sticker { animation: none; } }
