@@ -15,6 +15,7 @@ import {
 import { awardFinish, unopenedGifts, openGift } from "./rewards.js";
 import { shortDate, summarize, weekStreak } from "./history.js";
 import { goldenCount, prizeProgress } from "./prize.js";
+import { makeBackup, readBackup, photoIdsIn } from "./backup.js";
 import { savePhoto, loadPhoto, deletePhoto, shrinkPhoto } from "./photos.js";
 import { SETS, ALL_STICKERS } from "../data/stickers.js";
 import { load, save } from "./storage.js";
@@ -633,7 +634,7 @@ function parentScreen() {
   return [
     el("div", { class: "top" },
       el("h1", {}, "Grown-ups"),
-      button("Done", () => { prizeDraft = null; go("home"); }, "main")),
+      button("Done", () => { prizeDraft = null; backupNote = ""; restoreDraft = null; go("home"); }, "main")),
 
     el("section", { class: "card" },
       el("h2", {}, "Weekly goal"),
@@ -676,7 +677,105 @@ function parentScreen() {
           render();
         }, "main"))
     ),
+
+    backupCard(),
   ];
+}
+
+// ---------- Backup ----------
+
+let backupNote = ""; // a short message shown in the backup card
+let restoreDraft = null; // a backup file that was picked, waiting for a yes
+
+const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(reader.error);
+  reader.readAsDataURL(blob);
+});
+const dataUrlToBlob = (dataUrl) => fetch(dataUrl).then((response) => response.blob());
+
+async function saveBackup() {
+  const photos = {};
+  for (const id of photoIdsIn(state)) {
+    const blob = await loadPhoto(id);
+    if (blob) photos[id] = await blobToDataUrl(blob);
+  }
+  const name = `practice-stars-backup-${today()}.json`;
+  const file = new File([makeBackup(state, photos, today())], name, { type: "application/json" });
+  // On an iPad this opens the share sheet ("Save to Files", AirDrop, ...).
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] });
+      return "Backup made.";
+    } catch (error) {
+      if (error.name === "AbortError") return "";
+    }
+  }
+  // Anywhere else, download the file.
+  const link = el("a", { href: URL.createObjectURL(file), download: name });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  return "Backup saved to your downloads.";
+}
+
+async function restoreBackup(backup) {
+  for (const [id, dataUrl] of Object.entries(backup.photos)) {
+    await savePhoto(id, await dataUrlToBlob(dataUrl));
+  }
+  save(backup.state);
+  state = load();
+}
+
+function backupCard() {
+  if (restoreDraft) {
+    return el("section", { class: "card gift-card" },
+      el("h2", {}, "Replace everything on this device?"),
+      el("p", {}, `This backup${restoreDraft.savedOn ? ` from ${shortDate(restoreDraft.savedOn)}` : ""} will replace the checklist, stars, stickers, and past weeks on this device.`),
+      el("div", { class: "row" },
+        button("Keep what's here", () => { restoreDraft = null; render(); }),
+        button("Replace with the backup", async () => {
+          const backup = restoreDraft;
+          restoreDraft = null;
+          try {
+            await restoreBackup(backup);
+            backupNote = "Backup restored.";
+          } catch {
+            backupNote = "The backup couldn't be restored.";
+          }
+          prizeDraft = null;
+          render();
+        }, "main"))
+    );
+  }
+  const input = el("input", { type: "file", accept: "application/json,.json", class: "file-input" });
+  input.addEventListener("change", async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      restoreDraft = readBackup(await file.text());
+      backupNote = "";
+    } catch (error) {
+      backupNote = error.message;
+    }
+    render();
+  });
+  return el("section", { class: "card" },
+    el("h2", {}, "Backup"),
+    el("p", {}, "Everything is stored only on this device. A backup is one file with the checklist, stars, stickers, past weeks, and note photos. Keep it somewhere safe, such as the Files app."),
+    el("p", { class: "done-note", role: "status" }, backupNote),
+    el("div", { class: "row" },
+      button("Save a backup", async () => {
+        try {
+          backupNote = await saveBackup();
+        } catch {
+          backupNote = "The backup couldn't be made.";
+        }
+        render();
+      }),
+      el("label", { class: "btn file-label" }, input, "Restore from a backup"))
+  );
 }
 
 // ---------- Past weeks ----------

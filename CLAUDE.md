@@ -37,6 +37,7 @@ src/rewards.js     the rules for stars, gifts, and stickers (testable)
 src/history.js     past weeks and the week streak (testable)
 src/photos.js      keeps note photos in IndexedDB on the device
 src/prize.js       the grown-up-set prize and its progress (testable)
+src/backup.js      builds and checks the backup file (testable)
 src/storage.js     saves and loads from localStorage
 src/app.js         draws the screens and handles taps
 data/stickers.js   the sticker album: four sets of ten original drawings
