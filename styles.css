@@ -137,3 +137,9 @@ textarea:focus, .btn:focus-visible, .box-tap:focus-visible, .chip:focus-visible 
 @keyframes pop { 0% { transform: scale(0.2); } 70% { transform: scale(1.12); } 100% { transform: scale(1); } }
 /* People who ask their device for less motion get none. */
 @media (prefers-reduced-motion: reduce) { .gift-button .gift-art, .reveal .sticker { animation: none; } }
+
+/* Week streak and past weeks. */
+.streak { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--main); background: var(--main-soft); border-radius: 20px; padding: 6px 14px; }
+.icon-flame { fill: currentColor; stroke: none; }
+.done-note .icon-star { color: var(--star); }
+.past-items { margin: 0; padding-left: 24px; color: var(--ink-soft); }
