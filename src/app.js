@@ -398,22 +398,37 @@ function practiceScreen() {
   ];
 }
 
+// A big smiling star with rays behind it, for the moments worth cheering.
+function bigStar() {
+  let rays = "";
+  for (let i = 0; i < 12; i++) {
+    rays += `<path d="M100 100L${i % 2 ? 94 : 91} ${i % 2 ? 30 : 12}h${i % 2 ? 12 : 18}z" transform="rotate(${i * 30} 100 100)"/>`;
+  }
+  const star = el("div", { class: "big-star", "aria-hidden": "true" });
+  star.innerHTML = `<svg viewBox="0 0 200 200">${SKY_DEFS}<g class="rays">${rays}</g>${starArt(100, 104, 54, true)}</svg>`;
+  return star;
+}
+
+// The moment after "Finish practice": the sky, a big star, and confetti.
 function finishedScreen() {
   const week = state.week;
   const day = findDay(week, practiceOn || today());
   const total = week.items.length;
   const count = day ? day.done.length : 0;
   const when = day && day.date !== today() ? `on ${longDate(day.date)}` : "today";
-  const headline = count === total ? "You did everything on your list" : "Practice done";
+  const headline = count === total ? "You did everything on your list!" : "Practice done!";
+  const stars = day ? day.stars : 0;
+  const waiting = unopenedGifts(week).length;
   return [
-    el("section", { class: "card center" },
-      el("div", { class: "big-star" }, icon("star")),
+    el("section", { class: "sky finish" },
+      confetti(),
+      bigStar(),
       el("h1", {}, headline),
+      el("p", { class: "finish-stars" }, icon("star"), ` +${stars} ${stars === 1 ? "star" : "stars"}`),
       el("p", {}, `${count} of ${total} checked ${when}. ${goalMessage(finishedDayCount(week))}`),
-      el("p", { class: "earned" }, icon("star"), ` You earned ${day ? day.stars : 0} ${day && day.stars === 1 ? "star" : "stars"} ${when}.`),
-      unopenedGifts(week).length > 0
-        ? button(unopenedGifts(week).length === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "main")
-        : button("Done", () => go("home"), "main")
+      waiting > 0
+        ? button(waiting === 1 ? "Open your gift" : "Open your gifts", () => go("gift"), "gold")
+        : button("Done", () => go("home"), "gold")
     ),
   ];
 }
@@ -546,7 +561,7 @@ function giftScreen() {
       : button("Done", () => { justOpened = null; go("home"); }, "main");
     if (!inside.sticker) {
       return [el("section", { class: "card center" },
-        el("div", { class: "big-star" }, icon("star")),
+        bigStar(),
         el("h1", {}, "Your album is full"),
         el("p", {}, `You have every sticker, so this gift holds ${inside.bonusStars} extra stars.`),
         next)];

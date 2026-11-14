@@ -177,9 +177,14 @@ p { margin: 0 0 14px; }
 .done-note .icon-star { color: var(--star-deep); }
 
 /* Finished screen. */
-.big-star { font-size: 84px; color: var(--star); line-height: 1; margin-bottom: 8px; }
-.earned { font-weight: 700; }
-.earned .icon { color: var(--star-deep); }
+.big-star { width: 210px; max-width: 60%; margin: 0 auto; animation: pop 0.6s ease-out; }
+.big-star svg { display: block; width: 100%; height: auto; overflow: visible; }
+.big-star .rays { fill: rgba(255, 210, 87, 0.300); transform-origin: 100px 100px; animation: rays 0.9s ease-out; }
+.finish { position: relative; padding: 26px 22px 30px; }
+.finish h1 { margin: 6px 0 10px; }
+.finish p { margin: 0 0 18px; color: rgba(255, 255, 255, 0.860); font-weight: 600; }
+.finish .finish-stars { display: inline-flex; align-items: center; gap: 6px; font-size: 26px; font-weight: 800; color: var(--sky-deep); background: var(--star); border-radius: 28px; padding: 6px 22px; margin-bottom: 14px; }
+.finish .confetti .bit { animation-name: fall-far; }
 .gift-card { background: var(--star-soft); border: 3px solid var(--star); }
 
 /* This week's list screen. */
@@ -265,11 +270,13 @@ textarea:focus, .text-input:focus, .btn:focus-visible, .box-tap:focus-visible, .
 @keyframes wiggle { 0%, 60%, 100% { transform: rotate(0); } 70% { transform: rotate(-5deg); } 80% { transform: rotate(5deg); } 90% { transform: rotate(-3deg); } }
 @keyframes pop { 0% { transform: scale(0.3); } 65% { transform: scale(1.18); } 100% { transform: scale(1); } }
 @keyframes fly { 0% { transform: translate(0, 0) rotate(0); opacity: 1; } 70% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) rotate(var(--turn)); opacity: 0; } }
+@keyframes rays { 0% { transform: scale(0.2) rotate(-40deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes fall-far { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(700px) rotate(var(--turn)); opacity: 0; } }
 @keyframes fall { 0% { transform: translateY(0) rotate(0); opacity: 1; } 100% { transform: translateY(520px) rotate(var(--turn)); opacity: 0; } }
 
 /* People who ask their device for less motion get none. */
 @media (prefers-reduced-motion: reduce) {
-  .gift-button .gift-art, .reveal .sticker, .box-pop, .bit, .spark { animation: none; }
+  .gift-button .gift-art, .reveal .sticker, .box-pop, .bit, .spark, .big-star, .big-star .rays { animation: none; }
   .gift-art .lid, .hold.holding .hold-fill { transition: none; }
 }
 
