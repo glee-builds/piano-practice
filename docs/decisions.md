@@ -20,3 +20,4 @@ Every project decision, when it was made, and why. When a decision changes, don'
 | 2026-11-13 | Features | Removed the "Read it to me" button | The owner decided it isn't needed: the player reads the list without help |
 | 2026-11-13 | Features | Removed the photo of the teacher's note | The owner decided it isn't needed, because the list is dictated or typed straight from the paper note |
 | 2026-11-13 | Data | Everything is in `localStorage`. IndexedDB is no longer used | There are no photos to store |
+| 2026-11-13 | Rewards | Added two sticker sets, "Music" and "Things that go", for 60 stickers in all | The owner asked for room for more stickers. At about 3 practices a week, 40 would run out in roughly 3 months |
