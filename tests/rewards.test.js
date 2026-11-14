@@ -82,8 +82,9 @@ test("when the album is full a gift gives bonus stars instead", () => {
   assert.equal(unopenedGifts(result.week).length, 0);
 });
 
-test("sticker data: four sets of ten, with unique ids and names", () => {
-  assert.deepEqual(SETS.map((s) => s.stickers.length), [10, 10, 10, 10]);
-  assert.equal(new Set(ALL_STICKERS.map((s) => s.id)).size, 40);
+test("sticker data: every set has ten stickers, with unique ids and names", () => {
+  for (const set of SETS) assert.equal(set.stickers.length, 10, set.name);
+  assert.equal(new Set(ALL_STICKERS.map((s) => s.id)).size, ALL_STICKERS.length);
+  assert.equal(new Set(ALL_STICKERS.map((s) => s.name)).size, ALL_STICKERS.length);
   for (const s of ALL_STICKERS) assert.ok(s.name && s.art.startsWith("<"), s.id);
 });

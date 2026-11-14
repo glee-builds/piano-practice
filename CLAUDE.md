@@ -39,7 +39,8 @@ src/prize.js       the grown-up-set prize and its progress (testable)
 src/backup.js      builds and checks the backup file (testable)
 src/storage.js     saves and loads from localStorage
 src/app.js         draws the screens and handles taps
-data/stickers.js   the sticker album: four sets of ten original drawings
+data/stickers.js   the sticker album: sets of ten original drawings. Add a
+                   set or a sticker here and the album makes room for it
 sw.js              service worker: saves the app's files so it opens offline.
                    Add every new file to its FILES list (a test checks this)
 manifest.webmanifest  name, icon, and colors for the home-screen app
